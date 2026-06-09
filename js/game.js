@@ -7,6 +7,21 @@
 import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js';
 import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound } from './battle.js';
 
+// Base URL for the matchmaking server backend.
+// GitHub Pages hosts static files and cannot run the Python backend.
+// To use PvP on GitHub Pages, deploy server.py to a cloud hosting service (like Render)
+// and paste its secure HTTPS URL here.
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? ''
+    : 'https://three-kingdoms-b613.onrender.com'; // Replace this with your hosted backend URL
+
+let pvpTimerInterval = null;
+let playerId = localStorage.getItem('pvp_player_id');
+if (!playerId) {
+    playerId = 'player_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+    localStorage.setItem('pvp_player_id', playerId);
+}
+
 const factionChinese = {
     shu: '蜀',
     wei: '魏',
@@ -25,6 +40,8 @@ export const state = {
     lives: 3,
     round: 1,
     gameState: 'prep', // 'prep' or 'battle'
+    isPvp: false,
+    pvpPlayerId: playerId,
     
     // Shop slots: 5 items
     shopSlots: [null, null, null, null, null],
@@ -69,9 +86,10 @@ let elBtnUpgrade, elBtnRefresh, elBtnStart, elUpgradeGoldCost;
 let elOverlay, elOverlayTitle, elOverlayDesc, elOverlayRewards, elBtnOverlayAction;
 
 // Menu and Modal DOM elements
-let elMenuOverlay, elBtnMenuStart, elBtnMenuRoster, elBtnToggleAudio;
+let elMenuOverlay, elBtnMenuStart, elBtnMenuPvp, elBtnMenuRoster, elBtnToggleAudio;
 let elBtnCloseRoster, elRosterOverlay, elRosterGrid, elRosterDetailOverlay, elBtnCloseRosterDetail;
 let elBtnQuickAudio, elBtnQuickSpeed, elSellZone, elMobileIpLink;
+let elPvpOverlay, elPvpStatusText, elPvpTimerVal, elBtnPvpCancel;
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -107,6 +125,7 @@ function cacheElements() {
 
     elMenuOverlay = document.getElementById('menu-overlay');
     elBtnMenuStart = document.getElementById('btn-menu-start');
+    elBtnMenuPvp = document.getElementById('btn-menu-pvp');
     elBtnMenuRoster = document.getElementById('btn-menu-roster');
     elBtnToggleAudio = document.getElementById('btn-toggle-audio');
     elBtnCloseRoster = document.getElementById('btn-close-roster');
@@ -118,6 +137,11 @@ function cacheElements() {
     elBtnQuickSpeed = document.getElementById('btn-quick-speed');
     elSellZone = document.getElementById('drag-sell-zone');
     elMobileIpLink = document.getElementById('mobile-ip-link');
+    
+    elPvpOverlay = document.getElementById('pvp-overlay');
+    elPvpStatusText = document.getElementById('pvp-status-text');
+    elPvpTimerVal = document.getElementById('pvp-timer-val');
+    elBtnPvpCancel = document.getElementById('btn-pvp-cancel');
 }
 
 function initGrid() {
@@ -155,6 +179,8 @@ function setupEventListeners() {
     elBtnOverlayAction.addEventListener('click', handleOverlayAction);
 
     elBtnMenuStart.addEventListener('click', handleMenuStart);
+    if (elBtnMenuPvp) elBtnMenuPvp.addEventListener('click', handleMenuPvp);
+    if (elBtnPvpCancel) elBtnPvpCancel.addEventListener('click', cancelPvpMatchmaking);
     elBtnMenuRoster.addEventListener('click', handleMenuRoster);
     elBtnToggleAudio.addEventListener('click', handleToggleAudio);
     elBtnCloseRoster.addEventListener('click', handleCloseRoster);
@@ -1166,6 +1192,11 @@ function triggerBattleStart() {
     if (state.gameState !== 'prep') return;
     if (state.deployedUnits.length === 0) return;
     
+    if (state.isPvp) {
+        startPvpMatchmaking();
+        return;
+    }
+    
     // Clear selection
     state.selectedEntity = null;
     hideDetailCard();
@@ -1428,7 +1459,168 @@ function handleMenuStart() {
         console.warn('Audio Context unlock failed:', e);
     }
     
+    state.isPvp = false;
     startPrepPhase();
+}
+
+function handleMenuPvp() {
+    if (elMenuOverlay) {
+        elMenuOverlay.classList.add('hidden');
+    }
+    
+    // Dummy Audio Context gesture unlock
+    try {
+        const dummyCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (dummyCtx.state === 'suspended') {
+            dummyCtx.resume();
+        }
+    } catch(e) {
+        console.warn('Audio Context unlock failed:', e);
+    }
+    
+    state.isPvp = true;
+    startPrepPhase();
+    addLog("📢 已啟用多人匹配對戰模式，點擊「進入戰鬥」尋找割據群雄！", "system");
+}
+
+function startPvpMatchmaking() {
+    if (state.gameState !== 'prep') return;
+    if (state.deployedUnits.length === 0) return;
+    
+    // Clear selection
+    state.selectedEntity = null;
+    hideDetailCard();
+    renderBench();
+    renderBoard();
+    
+    // Save starting coordinates
+    state.deployedUnits.forEach(u => {
+        u.startX = u.x;
+        u.startY = u.y;
+        u.isDead = false;
+    });
+    
+    const serializedTeam = state.deployedUnits.map(u => ({
+        templateId: u.templateId,
+        star: u.star,
+        skillLevel: u.skillLevel,
+        x: u.x,
+        y: u.y
+    }));
+    
+    // Show overlay
+    if (elPvpOverlay) {
+        elPvpOverlay.classList.remove('hidden');
+    }
+    if (elPvpTimerVal) elPvpTimerVal.textContent = '0';
+    if (elPvpStatusText) elPvpStatusText.innerHTML = '正在召集各路群雄...<br>已等待 <span id="pvp-timer-val" style="color: var(--gold); font-weight: bold;">0</span> 秒';
+    
+    let pvpTimer = 0;
+    
+    // Clear any existing timer
+    if (pvpTimerInterval) clearInterval(pvpTimerInterval);
+    
+    const pollFunc = async () => {
+        try {
+            const fallback = pvpTimer >= 5;
+            const res = await fetch(`${API_BASE_URL}/api/pvp/poll?playerId=${state.pvpPlayerId}&fallback=${fallback}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.status === 'matched') {
+                    clearInterval(pvpTimerInterval);
+                    pvpTimerInterval = null;
+                    if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+                    
+                    startMatchedBattle(data, serializedTeam);
+                }
+            }
+        } catch (e) {
+            console.error('Error polling matchmaking status:', e);
+        }
+    };
+    
+    // First, join the queue
+    fetch(`${API_BASE_URL}/api/pvp/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            playerId: state.pvpPlayerId,
+            team: serializedTeam
+        })
+    }).then(async (res) => {
+        if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'matched') {
+                if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+                startMatchedBattle(data, serializedTeam);
+            } else {
+                // Keep polling
+                pvpTimerInterval = setInterval(async () => {
+                    pvpTimer++;
+                    const timerValEl = document.getElementById('pvp-timer-val');
+                    if (timerValEl) timerValEl.textContent = pvpTimer;
+                    await pollFunc();
+                }, 1000);
+            }
+        }
+    }).catch(err => {
+        console.error('Error joining matchmaking queue:', err);
+        addLog('聯機匹配失敗，請檢查伺服器連接。', 'damage');
+        if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+    });
+}
+
+function startMatchedBattle(data, serializedTeam) {
+    // Set game state to battle
+    state.gameState = 'battle';
+    if (elBtnStart) {
+        elBtnStart.disabled = true;
+        elBtnStart.classList.remove('pulsing');
+    }
+    if (elBtnRefresh) elBtnRefresh.disabled = true;
+    if (elBtnUpgrade) elBtnUpgrade.disabled = true;
+    
+    const oppName = data.opponent.playerId.startsWith('shadow_') 
+        ? `世家子弟_${data.opponent.playerId.split('_')[1]}`
+        : `主公_${data.opponent.playerId.split('_')[1] || data.opponent.playerId}`;
+    
+    addLog(`⚔ 匹配成功！迎戰對手：${oppName} ⚔`, 'victory');
+    if (data.isMirror) {
+        addLog(`📢 對手未在線，已載入歷史鏡像陣容。`, 'system');
+    }
+    
+    // Upload our team as a mirror candidate
+    fetch(`${API_BASE_URL}/api/pvp/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team: serializedTeam })
+    }).catch(err => console.warn('Failed to upload PvP team:', err));
+    
+    const pvpConfig = {
+        isPvp: true,
+        seed: data.seed,
+        opponentUnits: data.opponent.team
+    };
+    
+    initBattle(state.deployedUnits, state.round, endBattle, addLog, state.activeFates, state.activeFactions, state.settings, pvpConfig);
+    startBattle();
+}
+
+function cancelPvpMatchmaking() {
+    if (pvpTimerInterval) {
+        clearInterval(pvpTimerInterval);
+        pvpTimerInterval = null;
+    }
+    if (elPvpOverlay) {
+        elPvpOverlay.classList.add('hidden');
+    }
+    fetch(`${API_BASE_URL}/api/pvp/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: state.pvpPlayerId })
+    }).catch(err => console.warn('Failed to cancel matchmaking:', err));
+    
+    addLog('已取消匹配尋找。', 'system');
 }
 
 function handleMenuRoster() {
@@ -1698,7 +1890,7 @@ async function fetchLocalIp() {
         return;
     }
     try {
-        const response = await fetch('/api/ip');
+        const response = await fetch(`${API_BASE_URL}/api/ip`);
         if (response.ok) {
             const data = await response.json();
             if (elMobileIpLink && data.ip) {
