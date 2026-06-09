@@ -638,7 +638,6 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
     // Render starting battlefield units
     renderBattlefield();
 }
-}
 
 export function startBattle() {
     lastTime = Date.now();
