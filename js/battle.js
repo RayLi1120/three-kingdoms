@@ -335,6 +335,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
         if (template.faction === 'qun' && activeFactions.qun > 0) {
             const mult = activeFactions.qun === 2 ? 1.30 : 1.15;
             stats.tongshuai = Math.round(stats.tongshuai * mult);
+            stats.hpMax = Math.round(stats.hpMax * mult);
         }
         
         // Apply Zhao Yun secondary passive [一身是膽] stats buff
@@ -377,7 +378,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             team: 'player',
             hp: u.isBuilding ? Math.min(u.hp, stats.hpMax) : stats.hpMax,
             hpMax: stats.hpMax,
-            shield: 0,
+            shield: u.templateId === 'sentry_tower' ? currentRound * 100 : 0,
             energy: 0,
             stats,
             isBuilding: u.isBuilding,
@@ -456,6 +457,16 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             }
         });
     }
+
+    // 1.6 Apply Sentry Tower shield at start of combat
+    activeUnits.forEach(unit => {
+        if (unit.team === 'player' && unit.templateId === 'sentry_tower') {
+            const shieldAmt = currentRound * 100;
+            unit.shield = shieldAmt;
+            unit.statusEffects.push({ type: 'shield_dur', val: shieldAmt, expiry: Date.now() + 999999 });
+            addLog(`🛡️ 哨塔觸發 [堅石守禦]！獲得了 ${shieldAmt} 點防禦護盾。`, 'system');
+        }
+    });
     
     // 2. Generate enemy wave
     const wave = generateEnemyWave(round);
@@ -928,6 +939,18 @@ function performAttack(attacker, target, now) {
 
     // Apply damage to target
     takeDamage(target, damage, 'attack', attacker, isCrit);
+
+    // Apply Ballista Tower defense shred on attack
+    if (attacker.templateId === 'ballista_tower') {
+        const currentShred = target.statusEffects.find(e => e.type === 'shred');
+        const stacks = currentShred ? (currentShred.stacks || 1) : 0;
+        if (stacks < 3) {
+            const newStacks = stacks + 1;
+            applyStatusEffect(target, 'shred', 1, 5000, { stacks: newStacks });
+            createFloatingNumber(target, `破防 x${newStacks}`, 'dmg');
+            addLog(`🏹 弓弩塔發射穿甲巨矢！使 ${target.name} 破防（疊加 ${newStacks} 層）。`, 'system');
+        }
+    }
     
     // Lu Bu Splash damage
     const rageBuff = attacker.statusEffects.find(e => e.type === 'lu_bu_rage');
@@ -980,8 +1003,8 @@ function performAttack(attacker, target, now) {
     
     // Fates / Synergies: Wu Commanders burn on attack
     if (activeFates.includes('wu_commander') && ['sun_quan', 'zhou_yu', 'lu_xun'].includes(attacker.templateId)) {
-        if (Math.random() < 0.35) {
-            const burnDmg = Math.round(attacker.stats.zhili * 0.15);
+        if (Math.random() < 0.40) {
+            const burnDmg = Math.round(attacker.stats.zhili * 0.25);
             applyStatusEffect(target, 'burn', burnDmg, 3000);
             createFloatingNumber(target, '灼燒', 'skill');
         }
@@ -1101,8 +1124,11 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
         defense = Math.round(defense * (1 + 0.30 * multiplier));
     }
     
-    if (unit.statusEffects.some(e => e.type === 'shred')) {
-        defense = Math.round(defense * 0.75); // Zhang Fei armor shred
+    const shredEffect = unit.statusEffects.find(e => e.type === 'shred');
+    if (shredEffect) {
+        const stacks = shredEffect.stacks || 2.5; // Zhang Fei is 25% (2.5 stacks equivalent)
+        const reductionPct = Math.min(stacks * 0.10, 0.50); // 10% per stack, max 50%
+        defense = Math.round(defense * (1 - reductionPct));
     }
 
     // Xun Yu Wang Zuo defense aura: +20% Tongshuai to adjacent allies

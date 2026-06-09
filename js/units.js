@@ -517,11 +517,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '懿',
         color: '#8e44ad', // Purple
         skillName: '鷹視狼顧',
-        skillDesc: '對所有敵人造成180%智力謀略傷害，並恢復傷害量100%的生命值。戰場上每死亡一個單位，自身全屬性提升10%。',
+        skillDesc: '對所有敵人造成180%智力謀略傷害，並恢復傷害量60%的生命值。戰場上每死亡一個單位，自身全屬性提升10%。',
         skillConfig: {
             type: 'sima_yi_aoe',
             energyMax: 100,
             dmgMult: 1.8,
+            lifestealMult: 0.60,
             statBoostPerDeath: 0.10
         },
         extraSkillName: '用武通神',
@@ -541,7 +542,7 @@ export const UNIT_TEMPLATES = {
         role: '前排核心輸出',
         faction: 'qun',
         cost: 5,
-        hp: 980,
+        hp: 900,
         wuli: 130,
         zhili: 10,
         tongshuai: 75,
@@ -552,23 +553,23 @@ export const UNIT_TEMPLATES = {
         avatarText: '布',
         color: '#e74c3c', // Red
         skillName: '天下無雙',
-        skillDesc: '震懾相鄰的敵人1.5秒，隨後攻擊速度翻倍並造成150%的濺射傷害，持續6秒。',
+        skillDesc: '震懾相鄰的敵人1.5秒，隨後攻擊速度翻倍並造成120%的濺射傷害，持續5秒。',
         skillConfig: {
             type: 'lu_bu_rage',
             energyMax: 100,
             stunDurationSec: 1.5,
             atkSpeedMult: 2.0,
-            splashDmgMult: 1.5,
-            durationSec: 6
+            splashDmgMult: 1.2,
+            durationSec: 5
         },
         extraSkillName: '百騎劫營',
-        extraSkillDesc: '突擊（30%）：普通攻擊後，對目標造成160%武力物理傷害，並對敵軍兵力最低的單體濺射80%的傷害。',
+        extraSkillDesc: '突擊（30%）：普通攻擊後，對目標造成160%武力物理傷害，並對敵軍兵力最低的單體濺射50%的傷害。',
         extraSkillConfig: {
             type: 'assault',
             chance: 0.30,
             dmgMult: 1.6,
             dmgType: 'physical',
-            splashPct: 0.80
+            splashPct: 0.50
         }
     },
 
@@ -616,7 +617,7 @@ export const UNIT_TEMPLATES = {
         role: '防禦障礙',
         faction: 'building',
         cost: 2,
-        hp: 1400,
+        hp: 1600,
         wuli: 0,
         zhili: 0,
         tongshuai: 150,
@@ -627,7 +628,7 @@ export const UNIT_TEMPLATES = {
         avatarText: '哨',
         color: '#64748b', // Slate Gray
         skillName: '堅石守禦',
-        skillDesc: '靜態障礙物。阻擋敵人移動。無法攻擊。放置在前排可吸引敵方仇恨。',
+        skillDesc: '靜態障礙物。阻擋敵人移動。無法攻擊。放置在前排可吸引敵方仇恨。戰鬥開始時獲得防禦護盾（隨關卡回合數成長）。',
         skillConfig: null
     },
     
@@ -642,13 +643,13 @@ export const UNIT_TEMPLATES = {
         zhili: 0,
         tongshuai: 60,
         atkSpeed: 1.4,
-        range: 5,
+        range: 6,
         isBuilding: true,
         portrait: 'assets/ballista_tower.jpg',
         avatarText: '弩',
         color: '#2ed573', // Green
         skillName: '穿甲巨矢',
-        skillDesc: '靜態防禦塔。快速向遠處敵人發射重型鋼弩。',
+        skillDesc: '靜態防禦塔。快速向遠處敵人發射重型鋼弩。普通攻擊會額外削減目標10%防禦（最多疊加3層）。',
         skillConfig: null
     },
 
@@ -814,7 +815,7 @@ export const FATE_TEMPLATES = {
         id: 'wu_commander',
         name: '東吳大都督',
         requiredIds: ['sun_quan', 'zhou_yu', 'lu_xun'],
-        desc: '三人均獲得+20%攻擊速度。普通攻擊有35%幾率使目標陷入灼燒狀態，每秒造成15%智力的謀略傷害，持續3秒。'
+        desc: '三人均獲得+20%攻擊速度。普通攻擊有40%幾率使目標陷入灼燒狀態，每秒造成25%智力的謀略傷害，持續3秒。'
     },
     yellow_turban: {
         id: 'yellow_turban',
@@ -837,7 +838,7 @@ export const FATE_TEMPLATES = {
  * ⭐⭐⭐ (3-Star): 200% stats
  */
 export function getStatsForStar(template, star = 1) {
-    const scale = star === 1 ? 1.0 : star === 2 ? 1.5 : 2.0;
+    const scale = star === 1 ? 1.0 : star === 2 ? 1.8 : 3.2;
     
     return {
         hpMax: Math.round(template.hp * scale),
