@@ -16,6 +16,8 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     : 'https://three-kingdoms-b613.onrender.com'; // Replace this with your hosted backend URL
 
 let pvpTimerInterval = null;
+let pvpLobbyPollInterval = null;
+let pvpWaitingForReport = false; // True while waiting for opponent to also submit report
 let playerId = localStorage.getItem('pvp_player_id');
 if (!playerId) {
     playerId = 'player_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
@@ -42,6 +44,15 @@ export const state = {
     gameState: 'prep', // 'prep' or 'battle'
     isPvp: false,
     pvpPlayerId: playerId,
+
+    // PvP Lobby state
+    pvpLobbyId: null,
+    pvpMyPoints: 0,
+    pvpOppPoints: 0,
+    pvpTimeRemaining: 30,
+    pvpMyReady: false,
+    pvpLobbyStatus: null, // 'prep', 'combat', 'game_over'
+    pvpGameOver: false,
     
     // Shop slots: 5 items
     shopSlots: [null, null, null, null, null],
@@ -298,13 +309,26 @@ function updateUI() {
     const fillPercent = Math.min((state.currentDeployCost / state.maxDeployCost) * 100, 100);
     elCostBarFill.style.width = `${fillPercent}%`;
     
-    // Lives display
-    elLivesContainer.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
-        const heart = document.createElement('span');
-        heart.className = `heart ${i < state.lives ? 'active' : ''}`;
-        heart.textContent = '♥';
-        elLivesContainer.appendChild(heart);
+    // Lives / Score display
+    const livesLabel = document.querySelector('#stat-lives .label');
+    if (state.isPvp && state.pvpLobbyId) {
+        // PvP mode: replace hearts with score display
+        if (livesLabel) livesLabel.textContent = '積分';
+        elLivesContainer.innerHTML = `
+            <span style="color:var(--gold); font-weight:700; font-size:0.9rem;">己方: ${state.pvpMyPoints}</span>
+            <span style="color:var(--text-secondary); margin:0 4px;">|</span>
+            <span style="color:#f87171; font-weight:700; font-size:0.9rem;">對手: ${state.pvpOppPoints}</span>
+        `;
+    } else {
+        // Single player: heart display
+        if (livesLabel) livesLabel.textContent = '生命值';
+        elLivesContainer.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+            const heart = document.createElement('span');
+            heart.className = `heart ${i < state.lives ? 'active' : ''}`;
+            heart.textContent = '♥';
+            elLivesContainer.appendChild(heart);
+        }
     }
     
     // Button state updates
@@ -314,12 +338,50 @@ function updateUI() {
     elBtnRefresh.disabled = state.gold < 2;
     
     // Start Battle button
-    if (state.currentDeployCost === 0) {
+    if (state.isPvp && state.pvpLobbyId) {
+        // In an active PvP lobby
+        if (state.pvpGameOver) {
+            elBtnStart.textContent = '戰役結束';
+            elBtnStart.disabled = true;
+            elBtnStart.classList.remove('pulsing');
+        } else if (pvpWaitingForReport) {
+            elBtnStart.textContent = '等待對手結算...';
+            elBtnStart.disabled = true;
+            elBtnStart.classList.remove('pulsing');
+        } else if (state.pvpMyReady) {
+            elBtnStart.textContent = '已準備，等待對手...';
+            elBtnStart.disabled = true;
+            elBtnStart.classList.remove('pulsing');
+        } else if (state.gameState === 'prep' && state.pvpLobbyStatus === 'prep') {
+            const timeText = state.pvpTimeRemaining > 0 ? `(${state.pvpTimeRemaining}秒)` : '';
+            elBtnStart.textContent = `準備就緒 ${timeText}`.trim();
+            if (state.currentDeployCost === 0) {
+                elBtnStart.disabled = true;
+                elBtnStart.classList.remove('pulsing');
+            } else {
+                elBtnStart.disabled = false;
+                elBtnStart.classList.add('pulsing');
+            }
+        } else {
+            elBtnStart.textContent = '戰鬥進行中...';
+            elBtnStart.disabled = true;
+            elBtnStart.classList.remove('pulsing');
+        }
+    } else if (state.isPvp && !state.pvpLobbyId) {
+        // PvP mode but still searching for opponent
+        elBtnStart.textContent = '尋找對手中...';
         elBtnStart.disabled = true;
         elBtnStart.classList.remove('pulsing');
     } else {
-        elBtnStart.disabled = false;
-        elBtnStart.classList.add('pulsing');
+        // Single-player mode
+        elBtnStart.textContent = '進入戰鬥';
+        if (state.currentDeployCost === 0) {
+            elBtnStart.disabled = true;
+            elBtnStart.classList.remove('pulsing');
+        } else {
+            elBtnStart.disabled = false;
+            elBtnStart.classList.add('pulsing');
+        }
     }
 }
 
@@ -1190,12 +1252,20 @@ export function addLog(message, type = 'system') {
 // ==========================================
 function triggerBattleStart() {
     if (state.gameState !== 'prep') return;
-    if (state.deployedUnits.length === 0) return;
     
     if (state.isPvp) {
-        startPvpMatchmaking();
+        if (state.pvpLobbyId) {
+            // In an active lobby — submit ready status
+            if (!state.pvpMyReady && state.currentDeployCost > 0) {
+                submitPvpReady();
+            }
+        }
+        // If no lobby yet, button is disabled so this won't fire
         return;
     }
+    
+    // Single-player battle start
+    if (state.deployedUnits.length === 0) return;
     
     // Clear selection
     state.selectedEntity = null;
@@ -1207,7 +1277,7 @@ function triggerBattleStart() {
     state.deployedUnits.forEach(u => {
         u.startX = u.x;
         u.startY = u.y;
-        u.isDead = false; // Reset dead state
+        u.isDead = false;
     });
     
     // Update button states
@@ -1226,6 +1296,12 @@ function triggerBattleStart() {
 
 // Called by battle.js when combat completes
 export function endBattle(victory) {
+    // Route to PvP battle handler if in a lobby
+    if (state.isPvp && state.pvpLobbyId) {
+        endPvpBattle(victory);
+        return;
+    }
+    // Single-player
     if (victory) {
         addLog(`⚔ 第 ${state.round} 回合 勝利！ ⚔`, 'victory');
         showOverlay(true);
@@ -1286,6 +1362,12 @@ function showOverlay(victory) {
 }
 
 function handleOverlayAction() {
+    // PvP game over — route to title screen
+    if (state.pvpGameOver) {
+        resetGameToTitle();
+        return;
+    }
+    
     elOverlay.classList.add('hidden');
     
     if (state.lives <= 0) {
@@ -1463,42 +1545,177 @@ function handleMenuStart() {
     startPrepPhase();
 }
 
+// ==========================================
+// PvP LOBBY SYSTEM
+// ==========================================
+
 function handleMenuPvp() {
-    if (elMenuOverlay) {
-        elMenuOverlay.classList.add('hidden');
-    }
+    if (elMenuOverlay) elMenuOverlay.classList.add('hidden');
     
-    // Dummy Audio Context gesture unlock
+    // Audio Context unlock
     try {
         const dummyCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (dummyCtx.state === 'suspended') {
-            dummyCtx.resume();
-        }
-    } catch(e) {
-        console.warn('Audio Context unlock failed:', e);
-    }
+        if (dummyCtx.state === 'suspended') dummyCtx.resume();
+    } catch(e) { console.warn('Audio Context unlock failed:', e); }
     
+    // Reset PvP state
     state.isPvp = true;
+    state.pvpLobbyId = null;
+    state.pvpMyPoints = 0;
+    state.pvpOppPoints = 0;
+    state.pvpTimeRemaining = 30;
+    state.pvpMyReady = false;
+    state.pvpLobbyStatus = null;
+    state.pvpGameOver = false;
+    pvpWaitingForReport = false;
+    
+    // Start prep phase so player can arrange units while waiting
     startPrepPhase();
-    addLog("📢 已啟用多人匹配對戰模式，點擊「進入戰鬥」尋找割據群雄！", "system");
+    addLog('📢 多人匹配對戰模式。正在搜尋對手，請同時布置陣容...', 'system');
+    
+    // Show matchmaking overlay and join queue
+    showPvpMatchmakingOverlay();
+    joinPvpQueue();
 }
 
-function startPvpMatchmaking() {
-    if (state.gameState !== 'prep') return;
-    if (state.deployedUnits.length === 0) return;
+function showPvpMatchmakingOverlay() {
+    if (elPvpOverlay) elPvpOverlay.classList.remove('hidden');
+    if (elBtnPvpCancel) elBtnPvpCancel.style.display = '';
+    if (elPvpTimerVal) elPvpTimerVal.textContent = '0';
+    if (elPvpStatusText) {
+        elPvpStatusText.innerHTML = '正在召集各路群雄...<br>已等待 <span id="pvp-timer-val" style="color: var(--gold); font-weight: bold;">0</span> 秒';
+    }
+}
+
+async function joinPvpQueue() {
+    // Clear any previous matchmaking timer
+    if (pvpTimerInterval) { clearInterval(pvpTimerInterval); pvpTimerInterval = null; }
     
-    // Clear selection
-    state.selectedEntity = null;
-    hideDetailCard();
-    renderBench();
-    renderBoard();
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/pvp/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: state.pvpPlayerId, team: [] })
+        });
+        if (!res.ok) throw new Error('Server error');
+        const data = await res.json();
+        
+        if (data.status === 'matched') {
+            onPvpLobbyMatched(data.lobbyId);
+        } else {
+            // Start polling for a match
+            let waitTimer = 0;
+            pvpTimerInterval = setInterval(async () => {
+                waitTimer++;
+                const timerValEl = document.getElementById('pvp-timer-val');
+                if (timerValEl) timerValEl.textContent = waitTimer;
+                
+                try {
+                    const fallback = waitTimer >= 5;
+                    const pollRes = await fetch(`${API_BASE_URL}/api/pvp/poll?playerId=${state.pvpPlayerId}&fallback=${fallback}`);
+                    if (!pollRes.ok) return;
+                    const pollData = await pollRes.json();
+                    if (pollData.status === 'matched') {
+                        clearInterval(pvpTimerInterval);
+                        pvpTimerInterval = null;
+                        onPvpLobbyMatched(pollData.lobbyId);
+                    }
+                } catch(e) { console.error('Matchmaking poll error:', e); }
+            }, 1000);
+        }
+    } catch(e) {
+        console.error('Failed to join PvP queue:', e);
+        addLog('聯機匹配失敗，請檢查伺服器連接。', 'damage');
+        if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+        state.isPvp = false;
+        updateUI();
+    }
+}
+
+function onPvpLobbyMatched(lobbyId) {
+    state.pvpLobbyId = lobbyId;
     
-    // Save starting coordinates
-    state.deployedUnits.forEach(u => {
-        u.startX = u.x;
-        u.startY = u.y;
-        u.isDead = false;
-    });
+    // Hide matchmaking spinner
+    if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+    
+    // Start lobby state polling
+    startPvpLobbyPoll();
+    
+    addLog(`✅ 配對成功！大廳：${lobbyId.slice(-8)}。請在 30 秒備戰時間內完成布陣。`, 'victory');
+    updateUI();
+}
+
+function startPvpLobbyPoll() {
+    stopPvpLobbyPoll();
+    pvpLobbyPollInterval = setInterval(pollLobbyState, 1000);
+}
+
+function stopPvpLobbyPoll() {
+    if (pvpLobbyPollInterval) {
+        clearInterval(pvpLobbyPollInterval);
+        pvpLobbyPollInterval = null;
+    }
+}
+
+async function pollLobbyState() {
+    if (!state.pvpLobbyId) return;
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/pvp/poll?playerId=${state.pvpPlayerId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status !== 'in_lobby') return;
+        
+        const prevLobbyStatus = state.pvpLobbyStatus;
+        
+        // Sync server state to client
+        state.pvpLobbyStatus = data.lobbyStatus;
+        state.pvpMyPoints    = data.myPoints;
+        state.pvpOppPoints   = data.oppPoints;
+        state.pvpTimeRemaining = data.remainingPrepTime;
+        state.pvpMyReady     = data.myReady;
+        state.round          = data.currentRound;
+        
+        if (data.lobbyStatus === 'prep') {
+            if (pvpWaitingForReport) {
+                // Both players reported — advance to next round
+                pvpWaitingForReport = false;
+                hidePvpWaitingOverlay();
+                state.pvpMyReady = false;
+                startPrepPhase();
+                addLog(`🔔 對手已結算。第 ${state.round} 回合備戰開始！`, 'system');
+            }
+            // Auto-submit ready when prep timer expires
+            if (data.remainingPrepTime <= 0 && !state.pvpMyReady && state.gameState === 'prep') {
+                addLog('⏱ 備戰時間到！自動提交當前陣容。', 'system');
+                submitPvpReady();
+            }
+        }
+        else if (data.lobbyStatus === 'combat') {
+            // Transition from prep → combat
+            if (state.gameState === 'prep' && !pvpWaitingForReport) {
+                startPvpCombat(data);
+            }
+        }
+        else if (data.lobbyStatus === 'game_over') {
+            if (!state.pvpGameOver) {
+                stopPvpLobbyPoll();
+                if (pvpWaitingForReport) hidePvpWaitingOverlay();
+                showPvpGameOver();
+            }
+        }
+        
+        updateUI();
+    } catch(e) {
+        console.error('Lobby poll error:', e);
+    }
+}
+
+async function submitPvpReady() {
+    if (state.pvpMyReady) return;
+    if (!state.pvpLobbyId) return;
+    
+    state.pvpMyReady = true;
     
     const serializedTeam = state.deployedUnits.map(u => ({
         templateId: u.templateId,
@@ -1508,119 +1725,208 @@ function startPvpMatchmaking() {
         y: u.y
     }));
     
-    // Show overlay
-    if (elPvpOverlay) {
-        elPvpOverlay.classList.remove('hidden');
-    }
-    if (elPvpTimerVal) elPvpTimerVal.textContent = '0';
-    if (elPvpStatusText) elPvpStatusText.innerHTML = '正在召集各路群雄...<br>已等待 <span id="pvp-timer-val" style="color: var(--gold); font-weight: bold;">0</span> 秒';
-    
-    let pvpTimer = 0;
-    
-    // Clear any existing timer
-    if (pvpTimerInterval) clearInterval(pvpTimerInterval);
-    
-    const pollFunc = async () => {
-        try {
-            const fallback = pvpTimer >= 5;
-            const res = await fetch(`${API_BASE_URL}/api/pvp/poll?playerId=${state.pvpPlayerId}&fallback=${fallback}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.status === 'matched') {
-                    clearInterval(pvpTimerInterval);
-                    pvpTimerInterval = null;
-                    if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
-                    
-                    startMatchedBattle(data, serializedTeam);
-                }
-            }
-        } catch (e) {
-            console.error('Error polling matchmaking status:', e);
-        }
-    };
-    
-    // First, join the queue
-    fetch(`${API_BASE_URL}/api/pvp/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            playerId: state.pvpPlayerId,
-            team: serializedTeam
-        })
-    }).then(async (res) => {
-        if (res.ok) {
-            const data = await res.json();
-            if (data.status === 'matched') {
-                if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
-                startMatchedBattle(data, serializedTeam);
-            } else {
-                // Keep polling
-                pvpTimerInterval = setInterval(async () => {
-                    pvpTimer++;
-                    const timerValEl = document.getElementById('pvp-timer-val');
-                    if (timerValEl) timerValEl.textContent = pvpTimer;
-                    await pollFunc();
-                }, 1000);
-            }
-        }
-    }).catch(err => {
-        console.error('Error joining matchmaking queue:', err);
-        addLog('聯機匹配失敗，請檢查伺服器連接。', 'damage');
-        if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+    // Save start positions for post-battle restoration
+    state.deployedUnits.forEach(u => {
+        u.startX = u.x;
+        u.startY = u.y;
+        u.isDead = false;
     });
+    
+    updateUI();
+    
+    try {
+        await fetch(`${API_BASE_URL}/api/pvp/lobby/ready`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playerId: state.pvpPlayerId,
+                lobbyId:  state.pvpLobbyId,
+                team:     serializedTeam
+            })
+        });
+        addLog('⚔ 已提交陣容，等待對手就緒...', 'system');
+    } catch(e) {
+        console.error('Failed to submit ready:', e);
+        state.pvpMyReady = false;
+        updateUI();
+    }
 }
 
-function startMatchedBattle(data, serializedTeam) {
-    // Set game state to battle
+function startPvpCombat(data) {
+    // Ensure start coordinates saved (guard for auto-ready case)
+    state.deployedUnits.forEach(u => {
+        if (u.startX === undefined) { u.startX = u.x; u.startY = u.y; }
+        u.isDead = false;
+    });
+    
     state.gameState = 'battle';
-    if (elBtnStart) {
-        elBtnStart.disabled = true;
-        elBtnStart.classList.remove('pulsing');
-    }
+    if (elBtnStart) { elBtnStart.disabled = true; elBtnStart.classList.remove('pulsing'); }
     if (elBtnRefresh) elBtnRefresh.disabled = true;
     if (elBtnUpgrade) elBtnUpgrade.disabled = true;
     
-    const oppName = data.opponent.playerId.startsWith('shadow_') 
+    // Clear board selection
+    state.selectedEntity = null;
+    hideDetailCard();
+    renderBench();
+    renderBoard();
+    
+    const oppName = data.opponent.playerId.startsWith('shadow_')
         ? `世家子弟_${data.opponent.playerId.split('_')[1]}`
-        : `主公_${data.opponent.playerId.split('_')[1] || data.opponent.playerId}`;
+        : `主公_${data.opponent.playerId.slice(-6)}`;
     
-    addLog(`⚔ 匹配成功！迎戰對手：${oppName} ⚔`, 'victory');
-    if (data.isMirror) {
-        addLog(`📢 對手未在線，已載入歷史鏡像陣容。`, 'system');
-    }
+    addLog(`⚔ 第 ${state.round} 回合戰鬥開始！對手：${oppName} ⚔`, 'victory');
+    if (data.isShadow) addLog('📢 無真實對手，已載入影子陣容。', 'system');
     
-    // Upload our team as a mirror candidate
+    // Upload our team as a shadow candidate for future matches
+    const myTeam = state.deployedUnits.map(u => ({ templateId: u.templateId, star: u.star, skillLevel: u.skillLevel, x: u.x, y: u.y }));
     fetch(`${API_BASE_URL}/api/pvp/upload`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team: serializedTeam })
-    }).catch(err => console.warn('Failed to upload PvP team:', err));
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team: myTeam })
+    }).catch(e => console.warn('Failed to upload PvP team:', e));
     
-    const pvpConfig = {
-        isPvp: true,
-        seed: data.seed,
-        opponentUnits: data.opponent.team
-    };
-    
+    const pvpConfig = { isPvp: true, seed: data.seed, opponentUnits: data.opponent.team };
     initBattle(state.deployedUnits, state.round, endBattle, addLog, state.activeFates, state.activeFactions, state.settings, pvpConfig);
     startBattle();
 }
 
+async function endPvpBattle(victory) {
+    pvpWaitingForReport = true;
+    const result = victory ? 'victory' : 'defeat';
+    
+    addLog(
+        victory
+            ? `⚔ 第 ${state.round} 回合 勝利！等待對手結算...`
+            : `⚔ 第 ${state.round} 回合 落敗！等待對手結算...`,
+        victory ? 'victory' : 'damage'
+    );
+    
+    showPvpWaitingOverlay(victory);
+    updateUI();
+    
+    try {
+        await fetch(`${API_BASE_URL}/api/pvp/lobby/report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playerId: state.pvpPlayerId,
+                lobbyId:  state.pvpLobbyId,
+                result:   result
+            })
+        });
+    } catch(e) {
+        console.error('Failed to report battle result:', e);
+    }
+    // The lobby poll drives all subsequent transitions
+}
+
+function showPvpWaitingOverlay(victory) {
+    elOverlay.classList.remove('hidden');
+    elOverlayTitle.textContent = victory ? '⚔ 勝利' : '💀 落敗';
+    elOverlayTitle.className = `overlay-title ${victory ? 'victory' : 'defeat'}`;
+    elOverlayDesc.textContent = '正在同步對局結果，請稍候...';
+    elOverlayRewards.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;">
+            <div class="pvp-loading-spinner" style="width:22px;height:22px;border-width:3px;"></div>
+            <span style="color:var(--text-secondary);">等待對手結算中...</span>
+        </div>
+    `;
+    elBtnOverlayAction.style.display = 'none';
+}
+
+function hidePvpWaitingOverlay() {
+    elOverlay.classList.add('hidden');
+    elBtnOverlayAction.style.display = '';
+}
+
+function showPvpGameOver() {
+    state.pvpGameOver = true;
+    const myPts  = state.pvpMyPoints;
+    const oppPts = state.pvpOppPoints;
+    const iWon   = myPts > oppPts;
+    const isDraw = myPts === oppPts;
+    
+    elOverlay.classList.remove('hidden');
+    elBtnOverlayAction.style.display = '';
+    
+    elOverlayTitle.textContent = isDraw ? '⚖ 平局' : (iWon ? '🏆 戰役勝利' : '💀 戰役落敗');
+    elOverlayTitle.className   = `overlay-title ${iWon ? 'victory' : (isDraw ? '' : 'defeat')}`;
+    elOverlayDesc.textContent  = '20 回合征途落幕！';
+    
+    elOverlayRewards.innerHTML = `
+        <div style="font-size:1.15rem;margin:10px 0;">
+            <span style="color:var(--gold);font-weight:700;">己方積分：${myPts}</span>
+            &nbsp;vs&nbsp;
+            <span style="color:#f87171;font-weight:700;">對手積分：${oppPts}</span>
+        </div>
+        <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:6px;">
+            ${iWon  ? '✨ 恭喜！以謀略制勝，一統天下！'
+             : isDraw ? '⚖ 旗鼓相當，難分高下！'
+                     : '💀 英雄末路，此役落敗。明日再戰！'}
+        </div>
+    `;
+    elBtnOverlayAction.textContent = '返回主選單';
+    
+    addLog(`🏁 戰役結束！己方 ${myPts} 分 vs 對手 ${oppPts} 分。${iWon ? '勝利！' : (isDraw ? '平局。' : '落敗。')}`, iWon ? 'victory' : 'damage');
+}
+
+function resetGameToTitle() {
+    // Stop all PvP intervals
+    stopPvpLobbyPoll();
+    if (pvpTimerInterval) { clearInterval(pvpTimerInterval); pvpTimerInterval = null; }
+    
+    // Reset all state
+    state.gold             = 10;
+    state.maxDeployCost    = 5;
+    state.currentDeployCost = 0;
+    state.lives            = 3;
+    state.round            = 1;
+    state.gameState        = 'prep';
+    state.isPvp            = false;
+    state.pvpLobbyId       = null;
+    state.pvpMyPoints      = 0;
+    state.pvpOppPoints     = 0;
+    state.pvpTimeRemaining = 30;
+    state.pvpMyReady       = false;
+    state.pvpLobbyStatus   = null;
+    state.pvpGameOver      = false;
+    pvpWaitingForReport    = false;
+    state.deployedUnits    = [];
+    state.bench            = Array(8).fill(null);
+    
+    // Reset UI
+    elOverlay.classList.add('hidden');
+    elBtnOverlayAction.style.display = '';
+    elBtnStart.textContent = '進入戰鬥';
+    elLogBody.innerHTML = '';
+    
+    // Show title screen
+    if (elMenuOverlay) elMenuOverlay.classList.remove('hidden');
+}
+
 function cancelPvpMatchmaking() {
-    if (pvpTimerInterval) {
-        clearInterval(pvpTimerInterval);
-        pvpTimerInterval = null;
-    }
-    if (elPvpOverlay) {
-        elPvpOverlay.classList.add('hidden');
-    }
+    // Stop matchmaking timer
+    if (pvpTimerInterval) { clearInterval(pvpTimerInterval); pvpTimerInterval = null; }
+    // Stop lobby poll if running
+    stopPvpLobbyPoll();
+    
+    if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+    
+    // Notify server to remove from queue / lobby
     fetch(`${API_BASE_URL}/api/pvp/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId: state.pvpPlayerId })
-    }).catch(err => console.warn('Failed to cancel matchmaking:', err));
+    }).catch(e => console.warn('Failed to cancel matchmaking:', e));
+    
+    // Reset PvP state and return to single-player mode
+    state.isPvp          = false;
+    state.pvpLobbyId     = null;
+    state.pvpMyReady     = false;
+    state.pvpLobbyStatus = null;
+    pvpWaitingForReport  = false;
     
     addLog('已取消匹配尋找。', 'system');
+    updateUI();
 }
 
 function handleMenuRoster() {
