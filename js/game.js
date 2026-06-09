@@ -10,7 +10,7 @@ import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound } fr
 const factionChinese = {
     shu: '蜀',
     wei: '魏',
-    wu: '吴',
+    wu: '吳',
     qun: '群',
     building: '設施'
 };
@@ -260,7 +260,7 @@ export function startPrepPhase() {
     updateUI();
     renderBoard();
     
-    addLog(`--- 第 ${state.round} 回合 准備阶段 ---`, 'system');
+    addLog(`--- 第 ${state.round} 回合 準備階段 ---`, 'system');
 }
 
 function updateUI() {
@@ -427,7 +427,7 @@ function buyUnit(shopIndex) {
     // Find open bench slot
     const openBenchIndex = state.bench.indexOf(null);
     if (openBenchIndex === -1) {
-        addLog('储備栏已滿！请先將单位放置到戰场上。', 'damage');
+        addLog('儲備欄已滿！請先將單位放置到戰場上。', 'damage');
         return;
     }
     
@@ -440,7 +440,7 @@ function buyUnit(shopIndex) {
     };
     state.shopSlots[shopIndex] = null;
     
-    addLog(`成功招募 ${template.name}（統禦消耗：${template.cost}）（已放入储備栏）。`, 'system');
+    addLog(`成功招募 ${template.name}（統禦消耗：${template.cost}）（已放入儲備欄）。`, 'system');
     
     renderShop();
     renderBench();
@@ -629,7 +629,7 @@ function handleBenchEmptySlotClick(index) {
         
         state.selectedEntity = null;
         recalculateDeployCost();
-        addLog(`已將 ${UNIT_TEMPLATES[unit.templateId].name} 撤回储備栏。`, 'system');
+        addLog(`已將 ${UNIT_TEMPLATES[unit.templateId].name} 撤回儲備欄。`, 'system');
         
         hideDetailCard();
         renderBench();
@@ -768,7 +768,7 @@ function handleCellClick(x, y) {
     
     // Only allow placing in player zone (y values 6 to 9)
     if (y < 6) {
-        addLog("無法在敵方区域或缓冲区部署单位！", "damage");
+        addLog("無法在敵方區域或緩衝區部署單位！", "damage");
         return;
     }
     
@@ -830,7 +830,7 @@ function handleCellClick(x, y) {
             
             state.selectedEntity = null;
             recalculateDeployCost();
-            addLog(`已將 ${template.name} 部署到戰场 (${String.fromCharCode(65 + x)}${10 - y})。`, 'system');
+            addLog(`已將 ${template.name} 部署到戰場 (${String.fromCharCode(65 + x)}${10 - y})。`, 'system');
             
             hideDetailCard();
             renderBench();
@@ -869,7 +869,7 @@ function handleCellClick(x, y) {
             }
             
             state.selectedEntity = null;
-            addLog(`已將 ${template.name} 移动到 (${String.fromCharCode(65 + x)}${10 - y})。`, 'system');
+            addLog(`已將 ${template.name} 移動到 (${String.fromCharCode(65 + x)}${10 - y})。`, 'system');
             
             hideDetailCard();
             renderBench();
@@ -887,7 +887,7 @@ function fuseUnits(benchIndex, boardIndex) {
     const template = UNIT_TEMPLATES[target.templateId];
     
     if (target.star >= 3) {
-        addLog(`${template.name} 已经是最高星級（3星 ⭐⭐⭐）！`, 'damage');
+        addLog(`${template.name} 已經是最高星級（3星 ⭐⭐⭐）！`, 'damage');
         return;
     }
     
@@ -915,7 +915,7 @@ function fuseBoardUnits(srcBoardIndex, destBoardIndex) {
     const template = UNIT_TEMPLATES[target.templateId];
     
     if (target.star >= 3) {
-        addLog(`${template.name} 已经是最高星級（3星 ⭐⭐⭐）！`, 'damage');
+        addLog(`${template.name} 已經是最高星級（3星 ⭐⭐⭐）！`, 'damage');
         return;
     }
     
@@ -973,13 +973,13 @@ function showDetailCard(unit, allowUpgrade = true) {
     
     document.getElementById('detail-name').innerHTML = `${template.name} <span style="font-size:1rem;color:var(--gold);">${'★'.repeat(unit.star)}</span>`;
     document.getElementById('detail-role').textContent = template.role;
-    document.getElementById('detail-cost').textContent = `統禦消耗 / 购买价格：${template.cost} 統`;
+    document.getElementById('detail-cost').textContent = `統禦消耗 / 購買價格：${template.cost} 統`;
     
     const currentHp = typeof unit.hp === 'number' ? unit.hp : stats.hpMax;
     document.getElementById('detail-hp').textContent = `${currentHp} / ${stats.hpMax}`;
     document.getElementById('detail-dmg').textContent = stats.wuli > 0 ? stats.wuli : '0';
     document.getElementById('detail-atk-speed').textContent = template.atkSpeed > 0 ? `${template.atkSpeed}/s` : '0/s';
-    document.getElementById('detail-range').textContent = template.range > 0 ? `${template.range} 格` : '静态設施';
+    document.getElementById('detail-range').textContent = template.range > 0 ? `${template.range} 格` : '靜態設施';
     
     // Skill information with multipliers scaled by skill level
     const elSkillName = document.getElementById('detail-skill-name');
@@ -1034,7 +1034,7 @@ function showDetailCard(unit, allowUpgrade = true) {
             upgradeBtn.innerHTML = `升級戰法 (🪙 ${upgradeSkillCost} 金幣)`;
             if (state.gold < upgradeSkillCost || unit.skillLevel >= 5) {
                 upgradeBtn.disabled = true;
-                if (unit.skillLevel >= 5) upgradeBtn.innerHTML = '戰法已达最大等級 (5級)';
+                if (unit.skillLevel >= 5) upgradeBtn.innerHTML = '戰法已達最大等級 (5級)';
             }
             upgradeBtn.addEventListener('click', () => upgradeHeroSkill(unit));
             elDetailContent.appendChild(upgradeBtn);
@@ -1042,19 +1042,19 @@ function showDetailCard(unit, allowUpgrade = true) {
         if (state.selectedEntity && state.selectedEntity.source === 'board') {
             const benchBtn = document.createElement('button');
             benchBtn.className = 'btn-sidebar-bench';
-            benchBtn.innerHTML = '↩ 回收至储備栏';
+            benchBtn.innerHTML = '↩ 回收至儲備欄';
             benchBtn.addEventListener('click', () => {
                 const idx = state.selectedEntity ? state.selectedEntity.index : -1;
                 if (idx === -1) return;
                 const u = state.deployedUnits[idx];
                 if (!u) return;
                 const emptySlot = state.bench.findIndex(s => s === null);
-                if (emptySlot === -1) { addLog('储備栏已滿！', 'damage'); return; }
+                if (emptySlot === -1) { addLog('儲備欄已滿！', 'damage'); return; }
                 state.deployedUnits.splice(idx, 1);
                 state.bench[emptySlot] = { templateId: u.templateId, star: u.star, skillLevel: u.skillLevel };
                 state.selectedEntity = null;
                 recalculateDeployCost();
-                addLog(`${UNIT_TEMPLATES[u.templateId].name} 已回到储備栏。`, 'system');
+                addLog(`${UNIT_TEMPLATES[u.templateId].name} 已回到儲備欄。`, 'system');
                 hideDetailCard(); renderBench(); renderBoard(); updateUI();
             });
             elDetailContent.appendChild(benchBtn);
@@ -1085,7 +1085,7 @@ function showDetailCard(unit, allowUpgrade = true) {
         if (state.selectedEntity && state.selectedEntity.source === 'bench') {
             const hint = document.createElement('div');
             hint.className = 'detail-fusion-hint';
-            hint.innerHTML = `✨ 點擊戰场上的 <strong>${template.name}</strong> 即可合並升星！`;
+            hint.innerHTML = `✨ 點擊戰場上的 <strong>${template.name}</strong> 即可合並升星！`;
             elDetailContent.appendChild(hint);
         }
     }
@@ -1119,15 +1119,15 @@ function getSkillLevelDescription(template, level) {
     } else if (config.type === 'taunt_shield_sweep') {
         const dmgVal = Math.round(config.dmgMult * multiplier * 100);
         const shieldVal = Math.round(config.shieldMult * multiplier * 100);
-        desc = `對前方2x3範圍內的敵人造成 ${dmgVal}% 武力的物理傷害，嘲諷敵人並獲得相當于 ${shieldVal}% 統率的防禦護盾，持續 4 秒。`;
+        desc = `對前方2x3範圍內的敵人造成 ${dmgVal}% 武力的物理傷害，嘲諷敵人並獲得相當於 ${shieldVal}% 統率的防禦護盾，持續 4 秒。`;
     } else if (config.type === 'summon_buff') {
         const shieldVal = Math.round(config.shieldMult * multiplier * 100);
         const healVal = Math.round(config.healMult * multiplier * 100);
-        desc = `召喚 2 名丹陽精兵协助作戰，並為我軍全體提供 ${shieldVal}% 統率的防禦護盾，同時恢復全體 ${healVal}% 智力的生命值。`;
+        desc = `召喚 2 名丹陽精兵協助作戰，並為我軍全體提供 ${shieldVal}% 統率的防禦護盾，同時恢復全體 ${healVal}% 智力的生命值。`;
     } else if (config.type === 'push_dive') {
         const reductionPercent = Math.round(config.dmgReduction * 100);
         const diveReductionPercent = Math.round(config.tauntDmgReduction * 100);
-        desc = `將前方的敵人擊退 ${config.pushDist} 格。赵雲獲得 ${reductionPercent}% 免傷，且受擊退的敵軍攻擊自己時降低 ${diveReductionPercent}% 傷害，持續 ${config.durationSec} 秒。（當前戰法等級 ${level}，增加屬性收益）`;
+        desc = `將前方的敵人擊退 ${config.pushDist} 格。趙雲獲得 ${reductionPercent}% 免傷，且受擊退的敵軍攻擊自己時降低 ${diveReductionPercent}% 傷害，持續 ${config.durationSec} 秒。（當前戰法等級 ${level}，增加屬性收益）`;
     }
     return desc;
 }
@@ -1183,7 +1183,7 @@ function triggerBattleStart() {
     elBtnRefresh.disabled = true;
     elBtnUpgrade.disabled = true;
     
-    addLog("⚔ 戰斗正式打響！ ⚔", "system");
+    addLog("⚔ 戰鬥正式打響！ ⚔", "system");
     
     // Hand over control to battle.js with callbacks to break circular imports
     initBattle(state.deployedUnits, state.round, endBattle, addLog, state.activeFates, state.activeFactions, state.settings);
@@ -1197,7 +1197,7 @@ export function endBattle(victory) {
         showOverlay(true);
     } else {
         state.lives--;
-        addLog(`⚔ 第 ${state.round} 回合 戰敗！剩余生命值：${state.lives} ⚔`, 'damage');
+        addLog(`⚔ 第 ${state.round} 回合 戰敗！剩餘生命值：${state.lives} ⚔`, 'damage');
         showOverlay(false);
     }
 }
@@ -1218,10 +1218,10 @@ function showOverlay(victory) {
         const unusedCost = state.maxDeployCost - state.currentDeployCost;
         
         elOverlayRewards.innerHTML = `
-            <div>+5 基础回合金幣</div>
+            <div>+5 基礎回合金幣</div>
             <div>+2 勝利獎勵金幣</div>
             ${interest > 0 ? `<div>+${interest} 利息金幣</div>` : ''}
-            ${unusedCost > 0 ? `<div>+${unusedCost} 剩余統禦獎勵</div>` : ''}
+            ${unusedCost > 0 ? `<div>+${unusedCost} 剩餘統禦獎勵</div>` : ''}
         `;
         
         // Reward gold instantly
@@ -1233,9 +1233,9 @@ function showOverlay(victory) {
         elOverlayTitle.className = "overlay-title defeat";
         
         if (state.lives <= 0) {
-            elOverlayDesc.textContent = `你在戰斗中倒下了！最终止步回合：${state.round}`;
+            elOverlayDesc.textContent = `你在戰鬥中倒下了！最終止步回合：${state.round}`;
             elOverlayRewards.innerHTML = `
-                <div style="color:var(--red);">遊戲结束</div>
+                <div style="color:var(--red);">遊戲結束</div>
                 <div style="font-size:0.75rem;">大業未成而中道崩殂。</div>
             `;
             elBtnOverlayAction.textContent = "重新開始";
@@ -1264,7 +1264,7 @@ function handleOverlayAction() {
         state.deployedUnits = [];
         state.bench = Array(8).fill(null);
         elLogBody.innerHTML = '';
-        addLog("旧档案已清除。正在開启新的征程...", "system");
+        addLog("舊檔案已清除。正在開啟新的徵程...", "system");
         startPrepPhase();
     } else {
         // Increment round only on victory
@@ -1335,7 +1335,7 @@ function renderActiveFatesUI() {
 
     // 1. Render Faction Synergies
     const factionLabels = {
-        shu: { name: '蜀汉之志', stat: '最大兵力 +15% / +30%' },
+        shu: { name: '蜀漢之志', stat: '最大兵力 +15% / +30%' },
         wei: { name: '曹魏霸業', stat: '智力屬性 +15% / +30%' },
         wu: { name: '孫吳聯盟', stat: '攻擊速度 +15% / +30%' },
         qun: { name: '群雄割據', stat: '統率防禦 +15% / +30%' }
@@ -1360,7 +1360,7 @@ function renderActiveFatesUI() {
             const tier = state.activeFactions[faction];
             const isActive = tier > 0;
             const progressText = count >= 4 ? `${count}/4` : `${count}/2`;
-            const tierText = tier === 2 ? '阶段 2 (+30%)' : (tier === 1 ? '阶段 1 (+15%)' : '未激活');
+            const tierText = tier === 2 ? '階段 2 (+30%)' : (tier === 1 ? '階段 1 (+15%)' : '未激活');
             
             const item = document.createElement('div');
             item.className = `synergy-item faction-synergy ${isActive ? 'active' : ''} faction-${faction}`;
@@ -1369,7 +1369,7 @@ function renderActiveFatesUI() {
                     <span class="synergy-item-name">${factionLabels[faction].name}</span>
                     <span class="synergy-item-progress">${progressText} (${tierText})</span>
                 </div>
-                <div class="synergy-item-desc">陣营羈絆: ${factionLabels[faction].stat}</div>
+                <div class="synergy-item-desc">陣營羈絆: ${factionLabels[faction].stat}</div>
             `;
             elBody.appendChild(item);
         }
@@ -1403,7 +1403,7 @@ function renderActiveFatesUI() {
     }
     
     if (activeCount === 0) {
-        elBody.innerHTML = `<div class="synergy-empty">暫無活躍羈絆。请上陣匹配的武將！</div>`;
+        elBody.innerHTML = `<div class="synergy-empty">暫無活躍羈絆。請上陣匹配的武將！</div>`;
     }
 }
 
@@ -1539,47 +1539,47 @@ function getExtraSkillLevelDescription(template, level) {
     
     if (template.id === 'zhuge_liang') {
         const counterDmg = Math.round(150 * scale);
-        return `指挥：敵軍试圖發动主动戰法時，有 35% 幾率使其陷入計窮状态（無法施法）2 秒，並對其造成 ${counterDmg}% 智力的謀略傷害。`;
+        return `指揮：敵軍試圖發動主動戰法時，有 35% 幾率使其陷入計窮狀態（無法施法）2 秒，並對其造成 ${counterDmg}% 智力的謀略傷害。`;
     }
     if (template.id === 'zhang_fei') {
         const dmgBuff = Math.round(20 * scale);
         const defShred = Math.round(25 * scale);
-        return `被动：每次受到傷害時，使自身下一次攻擊或戰法造成的傷害提升 ${dmgBuff}%，並降低攻擊者 ${defShred}% 統率（防禦），持續 3 秒。`;
+        return `被動：每次受到傷害時，使自身下一次攻擊或戰法造成的傷害提升 ${dmgBuff}%，並降低攻擊者 ${defShred}% 統率（防禦），持續 3 秒。`;
     }
     if (template.id === 'cao_cao') {
         const dmgBuff = Math.round(12 * scale);
         const dr = Math.round(15 * scale);
-        return `指挥：使我軍全體造成的傷害提升 ${dmgBuff}%，並使曹操自身受到的傷害降低 ${dr}%。`;
+        return `指揮：使我軍全體造成的傷害提升 ${dmgBuff}%，並使曹操自身受到的傷害降低 ${dr}%。`;
     }
     if (template.id === 'liu_bei') {
         const heal = Math.round(80 * scale);
-        return `指挥：每 3 秒治療我軍兵力最低的单體（${heal}% 智力），並有 15% 幾率使隨機敵軍陷入繳械状态（無法普攻）2 秒。`;
+        return `指揮：每 3 秒治療我軍兵力最低的單體（${heal}% 智力），並有 15% 幾率使隨機敵軍陷入繳械狀態（無法普攻）2 秒。`;
     }
     if (template.id === 'guan_yu') {
         const wuli = Math.round(20 * scale);
-        return `被动：普通攻擊時，有 30% 幾率獲得 1 層抵禦（免疫下一次傷害），並提升自身 ${wuli}% 武力，持續 3 秒。`;
+        return `被動：普通攻擊時，有 30% 幾率獲得 1 層抵禦（免疫下一次傷害），並提升自身 ${wuli}% 武力，持續 3 秒。`;
     }
     if (template.id === 'sun_quan') {
         const dmg = Math.round(180 * scale);
-        return `突擊（35%）：普通攻擊後，對目标造成 ${dmg}% 智力的謀略傷害，並恢復自身等同于傷害量 100% 的生命值。`;
+        return `突擊（35%）：普通攻擊後，對目標造成 ${dmg}% 智力的謀略傷害，並恢復自身等同於傷害量 100% 的生命值。`;
     }
     if (template.id === 'lu_xun') {
         const dmg = Math.round(160 * scale);
         const stunChance = Math.round(40 * scale);
-        return `突擊（30%）：普通攻擊後，對目标造成 ${dmg}% 智力的謀略傷害。若目标處于灼燒状态，则有 ${stunChance}% 幾率使其震懾（無法行动）1.5 秒。`;
+        return `突擊（30%）：普通攻擊後，對目標造成 ${dmg}% 智力的謀略傷害。若目標處於灼燒狀態，則有 ${stunChance}% 幾率使其震懾（無法行動）1.5 秒。`;
     }
     if (template.id === 'yuan_shu') {
         const dmg = Math.round(200 * scale);
-        return `突擊（35%）：普通攻擊後，對目标造成 ${dmg}% 武力的物理傷害。`;
+        return `突擊（35%）：普通攻擊後，對目標造成 ${dmg}% 武力的物理傷害。`;
     }
     if (template.id === 'sima_yi') {
         const dmg = Math.round(100 * scale);
-        return `被动：戰斗開始後，每 4 秒對隨機敵軍 2 人造成謀略傷害（傷害率依次為 ${dmg}% / ${Math.round(150 * scale)}% / ${Math.round(200 * scale)}% / ${Math.round(250 * scale)}%，受智力影響）。`;
+        return `被動：戰鬥開始後，每 4 秒對隨機敵軍 2 人造成謀略傷害（傷害率依次為 ${dmg}% / ${Math.round(150 * scale)}% / ${Math.round(200 * scale)}% / ${Math.round(250 * scale)}%，受智力影響）。`;
     }
     if (template.id === 'lu_bu') {
         const dmg = Math.round(160 * scale);
         const splash = Math.round(80 * scale);
-        return `突擊（30%）：普通攻擊後，對目标造成 ${dmg}% 武力的物理傷害，並對敵軍兵力最低的单體溅射 ${splash}% 的傷害。`;
+        return `突擊（30%）：普通攻擊後，對目標造成 ${dmg}% 武力的物理傷害，並對敵軍兵力最低的單體濺射 ${splash}% 的傷害。`;
     }
     return template.extraSkillDesc || '-';
 }
@@ -1638,7 +1638,7 @@ function showRosterDetail(template) {
     elZhili.textContent = template.zhili || '0';
     elTongshuai.textContent = template.tongshuai || '0';
     elAtkSpeed.textContent = template.atkSpeed > 0 ? `${template.atkSpeed}/s` : '0/s';
-    elRange.textContent = template.range > 0 ? `${template.range} 格` : '静态設施';
+    elRange.textContent = template.range > 0 ? `${template.range} 格` : '靜態設施';
     
     // Primary Active skill
     elSkillName.innerHTML = `${template.skillName} <span class="skill-badge active-type">主動</span>`;

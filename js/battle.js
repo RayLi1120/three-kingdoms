@@ -413,7 +413,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             applyStatusEffect(targetAlly, 'insight', 0, 6000);
             applyStatusEffect(targetAlly, 'lifesteal', 30, 6000);
             createFloatingNumber(targetAlly, '十勝遺計', 'shield');
-            addLog(`🛡️ 郭嘉的 [十勝遺計] 赋予 ${targetAlly.name} 免疫控制與 30% 倒戈（吸血）效果，持續 6 秒！`, 'skill');
+            addLog(`🛡️ 郭嘉的 [十勝遺計] 賦予 ${targetAlly.name} 免疫控制與 30% 倒戈（吸血）效果，持續 6 秒！`, 'skill');
         }
     }
 
@@ -438,7 +438,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             if (unit.team === 'player') {
                 if (unit.y <= 7 && (unit.x === 3 || unit.x === 4)) {
                     applyStatusEffect(unit, 'formation_fengshi_front', 0, 9999999);
-                    addLog(`📐 袁紹的 [鋒矢陣] 將 ${unit.name} 置于前排中路（獲得攻速加成，但受到的傷害增加 15%）。`, 'skill');
+                    addLog(`📐 袁紹的 [鋒矢陣] 將 ${unit.name} 置於前排中路（獲得攻速加成，但受到的傷害增加 15%）。`, 'skill');
                 } else if (unit.y >= 8) {
                     applyStatusEffect(unit, 'formation_fengshi_back', 0, 9999999);
                 }
@@ -531,7 +531,7 @@ function combatTick() {
                 const enemies = activeUnits.filter(other => !other.isDead && other.team !== u.team);
                 if (enemies.length > 0) {
                     createFloatingNumber(u, '用武通神', 'skill');
-                    addLog(`🦅 司马懿触發 [用武通神]（第 ${u.yongWuCount} 阶段）！`, 'skill');
+                    addLog(`🦅 司馬懿觸發 [用武通神]（第 ${u.yongWuCount} 階段）！`, 'skill');
                     const limit = Math.min(enemies.length, 2);
                     for (let i = 0; i < limit; i++) {
                         const idx = Math.floor(Math.random() * enemies.length);
@@ -589,7 +589,7 @@ function combatTick() {
                         const randEnemy = enemies[Math.floor(Math.random() * enemies.length)];
                         applyStatusEffect(randEnemy, 'disarm', 0, 2000);
                         createFloatingNumber(randEnemy, '繳械', 'shield');
-                        addLog(`🤝 刘備的 [攜手禦敵] 使 ${randEnemy.name} 繳械 2 秒！`, 'skill');
+                        addLog(`🤝 劉備的 [攜手禦敵] 使 ${randEnemy.name} 繳械 2 秒！`, 'skill');
                     }
                 }
             }
@@ -604,7 +604,7 @@ function combatTick() {
                 const multiplier = 1 + (skillLvlMult - 1) * 0.25;
                 const dmgAmt = Math.round(u.hpMax * 0.08 * multiplier);
                 
-                addLog(`💀 荀彧的驱虎吞狼诅咒對 ${u.name} 造成了 ${dmgAmt} 點傷害！`, 'damage');
+                addLog(`💀 荀彧的驅虎吞狼詛咒對 ${u.name} 造成了 ${dmgAmt} 點傷害！`, 'damage');
                 takeDamage(u, dmgAmt, 'skill');
                 
                 // Splash 50% damage to adjacent enemies
@@ -658,7 +658,7 @@ function combatTick() {
                         other.hp += hpBonus;
                         
                         createFloatingNumber(other, '吸魂', 'heal');
-                        addLog(`🦅 司马懿吸取敗將之魂！疊加層數: ${other.simaYiDeathsCount}/8（全屬性增加 10%）`, 'skill');
+                        addLog(`🦅 司馬懿吸取敗將之魂！疊加層數: ${other.simaYiDeathsCount}/8（全屬性增加 10%）`, 'skill');
                     }
                 }
             });
@@ -897,12 +897,12 @@ function performAttack(attacker, target, now) {
         damage = Math.round(damage * 1.5);
     }
 
-    // Apply Guan Yu secondary passive [千里走單騎] on attack
+    // Apply Guan Yu secondary passive [千裡走單騎] on attack
     if (attacker.templateId === 'guan_yu' && Math.random() < 0.30) {
         applyStatusEffect(attacker, 'resist', 1, 999999);
         applyStatusEffect(attacker, 'guan_yu_wuli_buff', 20, 3000);
         createFloatingNumber(attacker, '抵禦', 'shield');
-        addLog(`🐎 關羽触發 [千里走單騎]！獲得抵禦效果與武力提升。`, 'skill');
+        addLog(`🐎 關羽觸發 [千裡走單騎]！獲得抵禦效果與武力提升。`, 'skill');
     }
 
     // Apply damage to target
@@ -916,7 +916,7 @@ function performAttack(attacker, target, now) {
             if (other.isDead || other.team === attacker.team || other === target) return;
             if (getDistance(target, other) <= 1) {
                 takeDamage(other, splashDmg, 'attack', attacker, false);
-                createFloatingNumber(other, '溅射', 'dmg');
+                createFloatingNumber(other, '濺射', 'dmg');
             }
         });
     }
@@ -977,7 +977,7 @@ function performAttack(attacker, target, now) {
 function triggerAssaultSkill(attacker, target, config) {
     const levelMult = 1 + (attacker.skillLevel - 1) * 0.25;
     const name = UNIT_TEMPLATES[attacker.templateId].extraSkillName;
-    addLog(`⚡ 突擊戰法！${attacker.name} 發动戰法 [${name}]（${attacker.skillLevel} 級）！`, 'skill');
+    addLog(`⚡ 突擊戰法！${attacker.name} 發動戰法 [${name}]（${attacker.skillLevel} 級）！`, 'skill');
 
     switch (attacker.templateId) {
         case 'sun_quan': {
@@ -1021,7 +1021,7 @@ function triggerAssaultSkill(attacker, target, config) {
             if (lowestEnemy) {
                 const splashDmg = Math.round(dmg * config.splashPct);
                 takeDamage(lowestEnemy, splashDmg, 'skill', attacker, false);
-                createFloatingNumber(lowestEnemy, '溅射', 'dmg');
+                createFloatingNumber(lowestEnemy, '濺射', 'dmg');
             }
             break;
         }
@@ -1267,7 +1267,7 @@ function castSkill(unit) {
     if (unit.team !== 'player') {
         const zhuge = activeUnits.find(u => !u.isDead && u.team === 'player' && u.templateId === 'zhuge_liang');
         if (zhuge && Math.random() < 0.35) {
-            addLog(`🔮 诸葛亮触發 [神機妙算]，成功打斷並計窮了 ${unit.name}！`, 'skill');
+            addLog(`🔮 諸葛亮觸發 [神機妙算]，成功打斷並計窮了 ${unit.name}！`, 'skill');
             createFloatingNumber(unit, '施法中斷', 'shield');
             applyStatusEffect(unit, 'silence', 0, 2000);
             const counterDmg = Math.round(zhuge.stats.zhili * 1.5 * (1 + (zhuge.skillLevel - 1) * 0.25));
@@ -1295,7 +1295,7 @@ function castSkill(unit) {
     }
     
     createFloatingNumber(unit, template.skillName, 'skill');
-    addLog(`✨ ${unit.name} 發动主动戰法 [${template.skillName}]（${unit.skillLevel} 級）！`, 'skill');
+    addLog(`✨ ${unit.name} 發動主動戰法 [${template.skillName}]（${unit.skillLevel} 級）！`, 'skill');
     
     switch (config.type) {
         case 'sima_yi_aoe': {
@@ -1323,7 +1323,7 @@ function castSkill(unit) {
             });
             if (totalDmgDealt > 0) {
                 healUnit(unit, totalDmgDealt);
-                addLog(`🦅 司马懿的 [鹰视狼顾] 共造成 ${totalDmgDealt} 點傷害，並為自身治療 ${totalDmgDealt} 生命值！`, 'skill');
+                addLog(`🦅 司馬懿的 [鷹視狼顧] 共造成 ${totalDmgDealt} 點傷害，並為自身治療 ${totalDmgDealt} 生命值！`, 'skill');
             }
             break;
         }
@@ -1383,7 +1383,7 @@ function castSkill(unit) {
                         
                         createFloatingNumber(luBu, '英雄增益', 'heal');
                         createFloatingNumber(highestDmgEnemy, '屬性吸取', 'dmg');
-                        addLog(`💖 英雄美人！吕布继承了 ${highestDmgEnemy.name} 50% 的屬性。`, 'skill');
+                        addLog(`💖 英雄美人！呂布繼承了 ${highestDmgEnemy.name} 50% 的屬性。`, 'skill');
                     }
                 }
             }
@@ -1566,8 +1566,8 @@ function castSkill(unit) {
             });
             if (maxHPEnergyEnemy) {
                 applyStatusEffect(maxHPEnergyEnemy, 'xun_yu_curse', 0, config.durationSec * 1000, { level: unit.skillLevel });
-                createFloatingNumber(maxHPEnergyEnemy, '诅咒', 'dmg');
-                addLog(`💀 荀彧對 ${maxHPEnergyEnemy.name} 施加了驱虎吞狼诅咒！`, 'skill');
+                createFloatingNumber(maxHPEnergyEnemy, '詛咒', 'dmg');
+                addLog(`💀 荀彧對 ${maxHPEnergyEnemy.name} 施加了驅虎吞狼詛咒！`, 'skill');
             }
             break;
 
@@ -1613,9 +1613,9 @@ function castSkill(unit) {
                     applyStatusEffect(unit, 'stat_steal_buff', 0, 4000, { wuliSteal, zhiliSteal, tongshuaiSteal });
                     applyStatusEffect(targetEnemy, 'stat_steal_debuff', 0, 4000, { wuliSteal, zhiliSteal, tongshuaiSteal });
                     
-                    createFloatingNumber(unit, '夺魂', 'heal');
+                    createFloatingNumber(unit, '奪魂', 'heal');
                     createFloatingNumber(targetEnemy, '屬性吸取', 'dmg');
-                    addLog(`🔥 周瑜触發 [奪魂挾魄] 夺取了 ${targetEnemy.name} 15% 的屬性！`, 'skill');
+                    addLog(`🔥 周瑜觸發 [奪魂挾魄] 奪取了 ${targetEnemy.name} 15% 的屬性！`, 'skill');
                 }
             }
             break;
@@ -1628,11 +1628,11 @@ function castSkill(unit) {
             if (targetEnemy) {
                 const lxDmg = Math.round(unit.stats.zhili * config.targetDmgMult * skillLvlMult);
                 const isBurned = targetEnemy.statusEffects.some(e => e.type === 'burn');
-                addLog(`🔥 陆逊對 ${targetEnemy.name} 發动火燒連營！`, 'skill');
+                addLog(`🔥 陸遜對 ${targetEnemy.name} 發動火燒連營！`, 'skill');
                 takeDamage(targetEnemy, lxDmg, 'skill', unit);
                 
                 if (isBurned) {
-                    addLog(`💥 火势蔓延！從 ${targetEnemy.name} 身上爆裂並扩散了灼燒状态！`, 'skill');
+                    addLog(`💥 火勢蔓延！從 ${targetEnemy.name} 身上爆裂並擴散了灼燒狀態！`, 'skill');
                     const splashDmg = Math.round(unit.stats.zhili * config.splashDmgMult * skillLvlMult);
                     const burnVal = Math.round(unit.stats.zhili * 0.15 * skillLvlMult);
                     activeUnits.forEach(other => {
@@ -1640,7 +1640,7 @@ function castSkill(unit) {
                         if (getDistance(targetEnemy, other) <= 1) {
                             takeDamage(other, splashDmg, 'skill', unit);
                             applyStatusEffect(other, 'burn', burnVal, 4000);
-                            createFloatingNumber(other, '灼燒扩散', 'dmg');
+                            createFloatingNumber(other, '灼燒擴散', 'dmg');
                         }
                     });
                 }
