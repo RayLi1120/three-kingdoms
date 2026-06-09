@@ -2380,3 +2380,34 @@ body {
     letter-spacing: 0.5px;
     box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.05), 0 0 10px rgba(255, 215, 0, 0.05);
 }
+
+/* ==========================================
+   PVP MATCHMAKING SYSTEM STYLES
+   ========================================== */
+.pvp-loading-spinner {
+    width: 60px;
+    height: 60px;
+    margin: 20px auto;
+    border: 3px solid rgba(255, 215, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--gold);
+    animation: pvp-spin 1s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+@keyframes pvp-spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-menu-cancel {
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-menu-cancel:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+    transform: translateY(-2px);
+}

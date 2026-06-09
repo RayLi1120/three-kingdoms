@@ -1,9 +1,19 @@
-import { UNIT_TEMPLATES, getStatsForStar } from './units.js';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js';
 
 // Local references to game state and callbacks to avoid circular imports
 let logCallback = null;
 let endBattleCallback = null;
 let currentRound = 1;
+
+// Seeded random number generator for deterministic combat results in PvP
+let currentSeed = 12345;
+const originalRandom = Math.random;
+
+function seededRandom() {
+    // Simple LCG PRNG
+    currentSeed = (1103515245 * currentSeed + 12345) % 2147483648;
+    return currentSeed / 2147483648;
+}
 
 
 // ==========================================
@@ -260,6 +270,7 @@ function addLog(message, type) {
 }
 
 function endBattle(victory) {
+    Math.random = originalRandom; // Restore original Math.random
     if (endBattleCallback) endBattleCallback(victory);
 }
 
@@ -303,7 +314,7 @@ function createEnemy(templateId, x, y) {
 // ==========================================
 // BATTLE INITIALIZATION
 // ==========================================
-export function initBattle(playerDeployedUnits, round, endCallback, logCallbackFn, playerActiveFates, playerActiveFactions, gameSettings) {
+export function initBattle(playerDeployedUnits, round, endCallback, logCallbackFn, playerActiveFates, playerActiveFactions, gameSettings, pvpConfig = null) {
     currentRound = round;
     endBattleCallback = endCallback;
     logCallback = logCallbackFn;
@@ -311,6 +322,14 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
     activeFates = playerActiveFates || [];
     activeFactions = playerActiveFactions || { shu: 0, wei: 0, wu: 0, qun: 0 };
     settings = gameSettings || { audio: true, speed: 1 };
+    
+    // Override Math.random with deterministic seeded PRNG for PvP
+    if (pvpConfig && typeof pvpConfig.seed === 'number') {
+        currentSeed = pvpConfig.seed;
+        Math.random = seededRandom;
+    } else {
+        Math.random = originalRandom;
+    }
     
     combatTickInterval = Math.round(150 / settings.speed);
     
@@ -391,63 +410,202 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             boardReference: u // Keep reference to update building HP later
         });
     });
-    
-    // Apply Zhao Yun一身是膽 CC Immunity and stat buff (has already been added to stats in loop, now apply immunity)
+
+    // Calculate opponent active fates and factions if in PvP
+    const oppActiveFactions = { shu: 0, wei: 0, wu: 0, qun: 0 };
+    const oppActiveFates = [];
+    if (pvpConfig && pvpConfig.opponentUnits) {
+        const oppCountedTemplates = new Set();
+        const oppFactionUniqueCount = { shu: 0, wei: 0, wu: 0, qun: 0 };
+        pvpConfig.opponentUnits.forEach(u => {
+            if (oppCountedTemplates.has(u.templateId)) return;
+            oppCountedTemplates.add(u.templateId);
+            const template = UNIT_TEMPLATES[u.templateId];
+            if (template && oppFactionUniqueCount[template.faction] !== undefined) {
+                oppFactionUniqueCount[template.faction]++;
+            }
+        });
+        
+        for (const faction in oppFactionUniqueCount) {
+            const count = oppFactionUniqueCount[faction];
+            if (count >= 4) {
+                oppActiveFactions[faction] = 2;
+            } else if (count >= 2) {
+                oppActiveFactions[faction] = 1;
+            }
+        }
+        
+        const oppDeployedIds = new Set(pvpConfig.opponentUnits.map(u => u.templateId));
+        for (const key in FATE_TEMPLATES) {
+            const fate = FATE_TEMPLATES[key];
+            const hasAll = fate.requiredIds.every(id => oppDeployedIds.has(id));
+            if (hasAll) {
+                oppActiveFates.push(fate.id);
+            }
+        }
+    }
+
+    // Load enemy/opponent units
+    if (pvpConfig && pvpConfig.opponentUnits) {
+        pvpConfig.opponentUnits.forEach((u, index) => {
+            const template = UNIT_TEMPLATES[u.templateId];
+            if (!template) return;
+            const stats = getStatsForStar(template, u.star);
+            
+            // Apply Faction Synergies for opponent!
+            if (template.faction === 'shu' && oppActiveFactions.shu > 0) {
+                const mult = oppActiveFactions.shu === 2 ? 1.30 : 1.15;
+                stats.hpMax = Math.round(stats.hpMax * mult);
+            }
+            if (template.faction === 'wei' && oppActiveFactions.wei > 0) {
+                const mult = oppActiveFactions.wei === 2 ? 1.30 : 1.15;
+                stats.zhili = Math.round(stats.zhili * mult);
+            }
+            if (template.faction === 'wu' && oppActiveFactions.wu > 0) {
+                const mult = oppActiveFactions.wu === 2 ? 1.30 : 1.15;
+                stats.atkSpeed = stats.atkSpeed * mult;
+            }
+            if (template.faction === 'qun' && oppActiveFactions.qun > 0) {
+                const mult = oppActiveFactions.qun === 2 ? 1.30 : 1.15;
+                stats.tongshuai = Math.round(stats.tongshuai * mult);
+                stats.hpMax = Math.round(stats.hpMax * mult);
+            }
+            
+            // Apply Zhao Yun secondary passive [一身是膽] stats buff
+            if (u.templateId === 'zhao_yun') {
+                stats.wuli += 30;
+                stats.tongshuai += 30;
+            }
+
+            // Apply Fate synergy stat multipliers!
+            if (oppActiveFates.includes('peach_garden') && ['liu_bei', 'guan_yu', 'zhang_fei'].includes(u.templateId)) {
+                stats.hpMax = Math.round(stats.hpMax * 1.20);
+                stats.wuli = Math.round(stats.wuli * 1.20);
+                stats.tongshuai = Math.round(stats.tongshuai * 1.20);
+            }
+            if (oppActiveFates.includes('wei_intellects') && ['cao_cao', 'guo_jia', 'xun_yu'].includes(u.templateId)) {
+                stats.zhili = Math.round(stats.zhili * 1.20);
+            }
+            if (oppActiveFates.includes('wu_commander') && ['sun_quan', 'zhou_yu', 'lu_xun'].includes(u.templateId)) {
+                stats.atkSpeed = stats.atkSpeed * 1.20;
+            }
+            if (oppActiveFates.includes('yellow_turban') && ['zhang_jiao', 'yuan_shao', 'yuan_shu'].includes(u.templateId)) {
+                stats.hpMax = Math.round(stats.hpMax * 1.20);
+            }
+            if (oppActiveFates.includes('hero_beauty')) {
+                if (u.templateId === 'lu_bu') {
+                    stats.wuli = Math.round(stats.wuli * 1.25);
+                } else if (u.templateId === 'diao_chan') {
+                    stats.hpMax = Math.round(stats.hpMax * 1.25);
+                }
+            }
+            
+            // Mirror coordinate placement
+            const mirroredX = 7 - u.x;
+            const mirroredY = 9 - u.y;
+
+            activeUnits.push({
+                id: `enemy_${u.templateId}_${index}`,
+                templateId: u.templateId,
+                name: template.name,
+                star: u.star,
+                skillLevel: u.skillLevel,
+                x: mirroredX,
+                y: mirroredY,
+                team: 'enemy',
+                hp: stats.hpMax,
+                hpMax: stats.hpMax,
+                shield: 0,
+                energy: 0,
+                stats,
+                isBuilding: template.isBuilding,
+                color: template.color || '#ff4757',
+                avatarText: template.avatarText,
+                isDead: false,
+                lastAttackTime: 0,
+                tauntTarget: null,
+                statusEffects: [],
+                boardReference: null
+            });
+        });
+    } else {
+        // 2. Generate procedural enemy wave (Singleplayer)
+        const wave = generateEnemyWave(round);
+        activeUnits.push(...wave);
+    }
+
+    // Apply Zhao Yun [一身是膽] CC Immunity (both player and enemy Zhao Yun)
     activeUnits.forEach(unit => {
-        if (unit.team === 'player' && unit.templateId === 'zhao_yun') {
+        if (unit.templateId === 'zhao_yun') {
             applyStatusEffect(unit, 'insight', 0, 9999999);
         }
     });
 
-    // Apply Guo Jia [十勝遺計] start-of-combat buff to highest Wuli ally
-    const guoJia = activeUnits.find(u => u.team === 'player' && u.templateId === 'guo_jia');
-    if (guoJia) {
-        let targetAlly = null;
-        let maxWuli = -1;
-        activeUnits.forEach(other => {
-            if (other.team === 'player' && other.stats.wuli > maxWuli) {
-                maxWuli = other.stats.wuli;
-                targetAlly = other;
-            }
-        });
-        if (targetAlly) {
-            applyStatusEffect(targetAlly, 'insight', 0, 6000);
-            applyStatusEffect(targetAlly, 'lifesteal', 30, 6000);
-            createFloatingNumber(targetAlly, '十勝遺計', 'shield');
-            addLog(`🛡️ 郭嘉的 [十勝遺計] 賦予 ${targetAlly.name} 免疫控制與 30% 倒戈（吸血）效果，持續 6 秒！`, 'skill');
-        }
-    }
-
-    // Apply Diao Chan [傾國傾城] start-of-combat target selection
-    const diaoChan = activeUnits.find(u => u.team === 'player' && u.templateId === 'diao_chan');
-    if (diaoChan) {
-        const enemies = activeUnits.filter(u => u.team !== 'player');
-        // Choose 2 random enemies
-        const limit = Math.min(enemies.length, 2);
-        for (let i = 0; i < limit; i++) {
-            const idx = Math.floor(Math.random() * enemies.length);
-            const enemy = enemies.splice(idx, 1)[0];
-            enemy.qingGuoTarget = true;
-            addLog(`🌸 貂蟬對 ${enemy.name} 施展 [傾國傾城]！`, 'skill');
-        }
-    }
-
-    // Apply Yuan Shao [鋒矢陣] formation placement buffs
-    const yuanShao = activeUnits.find(u => u.team === 'player' && u.templateId === 'yuan_shao');
-    if (yuanShao) {
-        activeUnits.forEach(unit => {
-            if (unit.team === 'player') {
-                if (unit.y <= 7 && (unit.x === 3 || unit.x === 4)) {
-                    applyStatusEffect(unit, 'formation_fengshi_front', 0, 9999999);
-                    addLog(`📐 袁紹的 [鋒矢陣] 將 ${unit.name} 置於前排中路（獲得攻速加成，但受到的傷害增加 15%）。`, 'skill');
-                } else if (unit.y >= 8) {
-                    applyStatusEffect(unit, 'formation_fengshi_back', 0, 9999999);
+    // Apply Guo Jia [十勝遺計] start-of-combat buff to highest Wuli ally (symmetrically per team)
+    ['player', 'enemy'].forEach(teamName => {
+        const guoJia = activeUnits.find(u => u.team === teamName && u.templateId === 'guo_jia');
+        if (guoJia) {
+            let targetAlly = null;
+            let maxWuli = -1;
+            activeUnits.forEach(other => {
+                if (other.team === teamName && other.stats.wuli > maxWuli) {
+                    maxWuli = other.stats.wuli;
+                    targetAlly = other;
                 }
+            });
+            if (targetAlly) {
+                applyStatusEffect(targetAlly, 'insight', 0, 6000);
+                applyStatusEffect(targetAlly, 'lifesteal', 30, 6000);
+                createFloatingNumber(targetAlly, '十勝遺計', 'shield');
+                addLog(`🛡️ ${teamName === 'player' ? '己方' : '敵方'}郭嘉的 [十勝遺計] 賦予 ${targetAlly.name} 免疫控制與 30% 倒戈（吸血）效果，持續 6 秒！`, 'skill');
             }
-        });
-    }
+        }
+    });
 
-    // 1.5 Apply Peach Garden shield at start of combat
+    // Apply Diao Chan [傾國傾城] start-of-combat target selection (symmetrically per team)
+    ['player', 'enemy'].forEach(teamName => {
+        const diaoChan = activeUnits.find(u => u.team === teamName && u.templateId === 'diao_chan');
+        if (diaoChan) {
+            const enemies = activeUnits.filter(u => u.team !== teamName);
+            const limit = Math.min(enemies.length, 2);
+            const enemiesCopy = [...enemies];
+            for (let i = 0; i < limit; i++) {
+                const idx = Math.floor(Math.random() * enemiesCopy.length);
+                const enemy = enemiesCopy.splice(idx, 1)[0];
+                enemy.qingGuoTarget = true;
+                addLog(`🌸 ${teamName === 'player' ? '己方' : '敵方'}貂蟬對 ${enemy.name} 施展 [傾國傾城]！`, 'skill');
+            }
+        }
+    });
+
+    // Apply Yuan Shao [鋒矢陣] formation placement buffs (symmetrically per team, accounting for mirrored coordinates)
+    ['player', 'enemy'].forEach(teamName => {
+        const yuanShao = activeUnits.find(u => u.team === teamName && u.templateId === 'yuan_shao');
+        if (yuanShao) {
+            activeUnits.forEach(unit => {
+                if (unit.team === teamName) {
+                    if (teamName === 'player') {
+                        if (unit.y <= 7 && (unit.x === 3 || unit.x === 4)) {
+                            applyStatusEffect(unit, 'formation_fengshi_front', 0, 9999999);
+                            addLog(`📐 己方袁紹的 [鋒矢陣] 將 ${unit.name} 置於前排中路（獲得攻速加成，但受到的傷害增加 15%）。`, 'skill');
+                        } else if (unit.y >= 8) {
+                            applyStatusEffect(unit, 'formation_fengshi_back', 0, 9999999);
+                        }
+                    } else {
+                        // Enemy team (mirrored grid, front row is y>=2, back row is y<=1)
+                        if (unit.y >= 2 && (unit.x === 3 || unit.x === 4)) {
+                            applyStatusEffect(unit, 'formation_fengshi_front', 0, 9999999);
+                            addLog(`📐 敵方袁紹的 [鋒矢陣] 將 ${unit.name} 置於前排中路（獲得攻速加成，但受到的傷害增加 15%）。`, 'skill');
+                        } else if (unit.y <= 1) {
+                            applyStatusEffect(unit, 'formation_fengshi_back', 0, 9999999);
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    // Apply Peach Garden shield at start of combat (both player and enemy)
     if (activeFates.includes('peach_garden')) {
         activeUnits.forEach(unit => {
             if (unit.team === 'player' && ['liu_bei', 'guan_yu', 'zhang_fei'].includes(unit.templateId)) {
@@ -457,23 +615,29 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             }
         });
     }
+    if (oppActiveFates && oppActiveFates.includes('peach_garden')) {
+        activeUnits.forEach(unit => {
+            if (unit.team === 'enemy' && ['liu_bei', 'guan_yu', 'zhang_fei'].includes(unit.templateId)) {
+                const shieldAmt = Math.round(unit.hpMax * 0.15);
+                unit.shield = shieldAmt;
+                unit.statusEffects.push({ type: 'shield_dur', val: shieldAmt, expiry: Date.now() + 999999 });
+            }
+        });
+    }
 
-    // 1.6 Apply Sentry Tower shield at start of combat
+    // Apply Sentry Tower shield at start of combat
     activeUnits.forEach(unit => {
-        if (unit.team === 'player' && unit.templateId === 'sentry_tower') {
+        if (unit.templateId === 'sentry_tower') {
             const shieldAmt = currentRound * 100;
             unit.shield = shieldAmt;
             unit.statusEffects.push({ type: 'shield_dur', val: shieldAmt, expiry: Date.now() + 999999 });
-            addLog(`🛡️ 哨塔觸發 [堅石守禦]！獲得了 ${shieldAmt} 點防禦護盾。`, 'system');
+            addLog(`🛡️ ${unit.team === 'player' ? '己方' : '敵方'}哨塔觸發 [堅石守禦]！獲得了 ${shieldAmt} 點防禦護盾。`, 'system');
         }
     });
     
-    // 2. Generate enemy wave
-    const wave = generateEnemyWave(round);
-    activeUnits.push(...wave);
-    
     // Render starting battlefield units
     renderBattlefield();
+}
 }
 
 export function startBattle() {
@@ -647,7 +811,7 @@ function combatTick() {
         if (!u.isDead && u.hp <= 0) {
             u.isDead = true;
             u.hp = 0;
-            addLog(`${u.name} 已被擊敗！`, u.team === 'player' ? 'damage' : 'victory');
+            addLog(`${u.team === 'player' ? '己方' : '敵方'}${u.name} 已被擊敗！`, u.team === 'player' ? 'damage' : 'victory');
             
             // If it is a player building, update the reference in game.js so it gets removed from the board!
             if (u.team === 'player' && u.boardReference) {
@@ -1328,17 +1492,16 @@ function castSkill(unit) {
     }
 
     // Zhuge Liang [神機妙算] silence counter check before enemy casts
-    if (unit.team !== 'player') {
-        const zhuge = activeUnits.find(u => !u.isDead && u.team === 'player' && u.templateId === 'zhuge_liang');
-        if (zhuge && Math.random() < 0.35) {
-            addLog(`🔮 諸葛亮觸發 [神機妙算]，成功打斷並計窮了 ${unit.name}！`, 'skill');
-            createFloatingNumber(unit, '施法中斷', 'shield');
-            applyStatusEffect(unit, 'silence', 0, 2000);
-            const counterDmg = Math.round(zhuge.stats.zhili * 1.5 * (1 + (zhuge.skillLevel - 1) * 0.25));
-            takeDamage(unit, counterDmg, 'skill', zhuge, false);
-            unit.energy = 0; // Consume their energy anyway
-            return;
-        }
+    const opponentTeam = unit.team === 'player' ? 'enemy' : 'player';
+    const zhuge = activeUnits.find(u => !u.isDead && u.team === opponentTeam && u.templateId === 'zhuge_liang');
+    if (zhuge && Math.random() < 0.35) {
+        addLog(`🔮 ${opponentTeam === 'player' ? '己方' : '敵方'}諸葛亮觸發 [神機妙算]，成功打斷並計窮了 ${unit.name}！`, 'skill');
+        createFloatingNumber(unit, '施法中斷', 'shield');
+        applyStatusEffect(unit, 'silence', 0, 2000);
+        const counterDmg = Math.round(zhuge.stats.zhili * 1.5 * (1 + (zhuge.skillLevel - 1) * 0.25));
+        takeDamage(unit, counterDmg, 'skill', zhuge, false);
+        unit.energy = 0; // Consume their energy anyway
+        return;
     }
 
     unit.energy = 0; // Consume energy
@@ -1870,7 +2033,7 @@ function renderBattlefield() {
             : `background-color: ${unit.color}33; border-color: ${unit.color}; display:flex; align-items:center; justify-content:center;`;
         
         unitEl.innerHTML = `
-            <div class="unit-stars">${unit.team === 'player' ? '★'.repeat(unit.star) : ''}</div>
+            <div class="unit-stars">${'★'.repeat(unit.star)}</div>
             <div class="unit-token" style="${tokenStyle}">
                 ${template.portrait ? '' : `<span style="font-family: var(--font-header); font-size:1.1rem; color:#fff; text-shadow:0 0 6px ${unit.color}aa">${unit.avatarText}</span>`}
             </div>

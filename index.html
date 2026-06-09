@@ -43,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=13">
+    <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
     <div class="game-container">
@@ -226,7 +226,8 @@
             <p class="menu-subtitle">英雄自走棋</p>
             
             <div class="menu-buttons">
-                <button class="btn btn-menu btn-menu-start" id="btn-menu-start">開始徵程</button>
+                <button class="btn btn-menu btn-menu-start" id="btn-menu-start">單人模式</button>
+                <button class="btn btn-menu btn-menu-pvp" id="btn-menu-pvp">多人匹配對戰</button>
                 <button class="btn btn-menu btn-menu-roster" id="btn-menu-roster">武將圖鑑</button>
             </div>
             
@@ -318,6 +319,18 @@
         </div>
     </div>
 
-    <script type="module" src="js/game.js?v=13"></script>
+    <!-- Matchmaking Overlay -->
+    <div class="overlay hidden" id="pvp-overlay" style="z-index: 10005;">
+        <div class="menu-card glass" style="padding: 40px; text-align: center;">
+            <h2 class="menu-title" style="font-size: 2.2rem; margin-bottom: 20px;">正在尋找對手</h2>
+            <div class="pvp-loading-spinner"></div>
+            <p class="pvp-status-text" id="pvp-status-text" style="color: var(--text-secondary); margin-top: 20px; font-size: 0.95rem;">
+                正在召集各路群雄... <br>已等待 <span id="pvp-timer-val" style="color: var(--gold); font-weight: bold;">0</span> 秒
+            </p>
+            <button class="btn btn-menu btn-menu-cancel" id="btn-pvp-cancel" style="margin-top: 30px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; cursor: pointer;">取消尋找</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/game.js?v=14"></script>
 </body>
 </html>
