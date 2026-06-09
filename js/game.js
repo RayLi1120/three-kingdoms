@@ -337,6 +337,7 @@ function rollShop() {
         { id: 'xun_yu', weight: 8 },
         { id: 'yuan_shao', weight: 8 },
         { id: 'yuan_shu', weight: 8 },
+        { id: 'diao_chan', weight: 8 },
         { id: 'zhuge_liang', weight: 6 },
         { id: 'zhang_fei', weight: 6 },
         { id: 'cao_cao', weight: 6 },
@@ -344,7 +345,9 @@ function rollShop() {
         { id: 'lu_xun', weight: 6 },
         { id: 'zhang_jiao', weight: 6 },
         { id: 'guan_yu', weight: 4 },
-        { id: 'zhou_yu', weight: 4 }
+        { id: 'zhou_yu', weight: 4 },
+        { id: 'sima_yi', weight: 3 },
+        { id: 'lu_bu', weight: 3 }
     ];
     
     // Draw 5 cards
