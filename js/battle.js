@@ -721,9 +721,24 @@ function combatTick() {
         if (dist <= u.stats.range) {
             // Attack!
             let effectiveAtkSpeed = u.stats.atkSpeed;
-            if (u.statusEffects.some(e => e.type === 'guo_jia_buff')) effectiveAtkSpeed *= 1.50;
-            if (u.statusEffects.some(e => e.type === 'sun_quan_buff')) effectiveAtkSpeed *= 1.30;
-            if (u.statusEffects.some(e => e.type === 'lu_bu_rage')) effectiveAtkSpeed *= 2.00;
+            const gjBuff = u.statusEffects.find(e => e.type === 'guo_jia_buff');
+            if (gjBuff) {
+                const skillLvlMult = gjBuff.level || 1;
+                const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+                effectiveAtkSpeed *= (1 + 0.50 * multiplier);
+            }
+            const sqBuff = u.statusEffects.find(e => e.type === 'sun_quan_buff');
+            if (sqBuff) {
+                const skillLvlMult = sqBuff.level || 1;
+                const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+                effectiveAtkSpeed *= (1 + 0.30 * multiplier);
+            }
+            const rageBuff = u.statusEffects.find(e => e.type === 'lu_bu_rage');
+            if (rageBuff) {
+                const skillLvlMult = rageBuff.level || 1;
+                const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+                effectiveAtkSpeed *= (1 + 1.0 * multiplier);
+            }
             
             if (effectiveAtkSpeed > 0 && now - u.lastAttackTime >= (1000 / effectiveAtkSpeed)) {
                 performAttack(u, target, now);
@@ -869,11 +884,17 @@ function performAttack(attacker, target, now) {
     // Calculate basic physical damage using attacker's 武力 (Martial Power)
     let damage = attacker.stats.wuli;
     
-    if (attacker.statusEffects.some(e => e.type === 'sun_quan_buff')) {
-        damage = Math.round(damage * 1.30);
+    const sqBuff = attacker.statusEffects.find(e => e.type === 'sun_quan_buff');
+    if (sqBuff) {
+        const skillLvlMult = sqBuff.level || 1;
+        const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+        damage = Math.round(damage * (1 + 0.30 * multiplier));
     }
-    if (attacker.statusEffects.some(e => e.type === 'yuan_shu_buff')) {
-        damage = Math.round(damage * 1.80);
+    const ysBuff = attacker.statusEffects.find(e => e.type === 'yuan_shu_buff');
+    if (ysBuff) {
+        const skillLvlMult = ysBuff.level || 1;
+        const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+        damage = Math.round(damage * (1 + 0.80 * multiplier));
     }
     if (attacker.statusEffects.some(e => e.type === 'gang_yong')) {
         damage = Math.round(damage * 1.20);
@@ -909,8 +930,11 @@ function performAttack(attacker, target, now) {
     takeDamage(target, damage, 'attack', attacker, isCrit);
     
     // Lu Bu Splash damage
-    if (attacker.statusEffects.some(e => e.type === 'lu_bu_rage')) {
-        const splashMult = 1.5;
+    const rageBuff = attacker.statusEffects.find(e => e.type === 'lu_bu_rage');
+    if (rageBuff) {
+        const skillLvlMult = rageBuff.level || 1;
+        const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+        const splashMult = 1.5 * multiplier;
         const splashDmg = Math.round(damage * splashMult);
         activeUnits.forEach(other => {
             if (other.isDead || other.team === attacker.team || other === target) return;
@@ -1064,10 +1088,18 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
     
     // Buff defenses
     const ysBuff = unit.statusEffects.find(e => e.type === 'yuan_shao_def_buff');
-    if (ysBuff) defense = Math.round(defense * 1.4);
+    if (ysBuff) {
+        const skillLvlMult = ysBuff.level || 1;
+        const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+        defense = Math.round(defense * (1 + 0.40 * multiplier));
+    }
     
     const sqBuff = unit.statusEffects.find(e => e.type === 'sun_quan_buff');
-    if (sqBuff) defense = Math.round(defense * 1.3);
+    if (sqBuff) {
+        const skillLvlMult = sqBuff.level || 1;
+        const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+        defense = Math.round(defense * (1 + 0.30 * multiplier));
+    }
     
     if (unit.statusEffects.some(e => e.type === 'shred')) {
         defense = Math.round(defense * 0.75); // Zhang Fei armor shred
@@ -1112,18 +1144,24 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
     // Guo Jia Skill damage reduction
     const gjBuff = unit.statusEffects.find(e => e.type === 'guo_jia_buff');
     if (gjBuff) {
-        reductionMult *= 0.70;
+        const skillLvlMult = gjBuff.level || 1;
+        const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+        const reductionPct = Math.min(0.30 * multiplier, 0.90); // Cap at 90% reduction
+        reductionMult *= (1 - reductionPct);
     }
     
     // Zhao Yun Skill damage reduction override
     if (unit.templateId === 'zhao_yun') {
         const diveReduction = unit.statusEffects.find(e => e.type === 'zhao_yun_dive');
         if (diveReduction) {
-            reductionMult *= 0.50; // Flat 50% decrease
+            const skillLvlMult = diveReduction.level || 1;
+            const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+            const baseReduction = Math.min(0.50 * multiplier, 0.90);
+            reductionMult *= (1 - baseReduction);
             
-            // Extra 50% of Command (tongshuai) reduction if attacker is one of pushed units
+            // Extra Command (tongshuai) reduction if attacker is one of pushed units
             if (source && diveReduction.pushedIds.includes(source.id)) {
-                const commandDmgReduction = Math.min(unit.stats.tongshuai / 200, 0.5); // Max 50% extra
+                const commandDmgReduction = Math.min((unit.stats.tongshuai / 200) * multiplier, 0.75);
                 reductionMult *= (1 - commandDmgReduction);
             }
         }
@@ -1305,15 +1343,28 @@ function castSkill(unit) {
                 if (other.isDead || other.team === unit.team) return;
                 let defense = other.stats.tongshuai;
                 const ysBuff = other.statusEffects.find(e => e.type === 'yuan_shao_def_buff');
-                if (ysBuff) defense = Math.round(defense * 1.4);
+                if (ysBuff) {
+                    const skillLvlMult = ysBuff.level || 1;
+                    const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+                    defense = Math.round(defense * (1 + 0.40 * multiplier));
+                }
                 const sqBuff = other.statusEffects.find(e => e.type === 'sun_quan_buff');
-                if (sqBuff) defense = Math.round(defense * 1.3);
+                if (sqBuff) {
+                    const skillLvlMult = sqBuff.level || 1;
+                    const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+                    defense = Math.round(defense * (1 + 0.30 * multiplier));
+                }
                 
                 let reductionMult = 1 - (defense / (defense + 250));
                 const lbBuff = other.statusEffects.find(e => e.type === 'liu_bei_buff');
                 if (lbBuff) reductionMult *= (1 - (lbBuff.val / 100));
                 const gjBuff = other.statusEffects.find(e => e.type === 'guo_jia_buff');
-                if (gjBuff) reductionMult *= 0.70;
+                if (gjBuff) {
+                    const skillLvlMult = gjBuff.level || 1;
+                    const multiplier = 1 + (skillLvlMult - 1) * 0.25;
+                    const reductionPct = Math.min(0.30 * multiplier, 0.90);
+                    reductionMult *= (1 - reductionPct);
+                }
                 
                 let netDmg = Math.round(dmg * reductionMult);
                 if (netDmg <= 0) netDmg = 1;
@@ -1342,7 +1393,7 @@ function castSkill(unit) {
             });
             
             // Gain Lu Bu rage buff
-            applyStatusEffect(unit, 'lu_bu_rage', 1, buffDur);
+            applyStatusEffect(unit, 'lu_bu_rage', 1, buffDur, { level: unit.skillLevel });
             createFloatingNumber(unit, '天下無雙', 'skill');
             break;
         }
@@ -1361,14 +1412,14 @@ function castSkill(unit) {
             
             if (highestDmgEnemy) {
                 const charmDur = config.charmDurationSec * 1000;
-                applyStatusEffect(highestDmgEnemy, 'charm', 0, charmDur);
+                applyStatusEffect(highestDmgEnemy, 'charm', 0, charmDur, { level: unit.skillLevel });
                 createFloatingNumber(highestDmgEnemy, '魅惑', 'shield');
                 addLog(`🌸 貂蟬魅惑了 ${highestDmgEnemy.name} 3 秒！`, 'skill');
                 
                 if (activeFates.includes('hero_beauty')) {
                     const luBu = activeUnits.find(u => !u.isDead && u.team === unit.team && u.templateId === 'lu_bu');
                     if (luBu) {
-                        const transferPct = config.statTransferPct;
+                        const transferPct = Math.min(config.statTransferPct * skillLvlMult, 1.0);
                         const wuliTransfer = Math.round(highestDmgEnemy.stats.wuli * transferPct);
                         const zhiliTransfer = Math.round(highestDmgEnemy.stats.zhili * transferPct);
                         const tongshuaiTransfer = Math.round(highestDmgEnemy.stats.tongshuai * transferPct);
@@ -1509,7 +1560,7 @@ function castSkill(unit) {
             });
             
             // Apply Zhao Yun dive buff
-            applyStatusEffect(unit, 'zhao_yun_dive', 0, config.durationSec * 1000, { pushedIds });
+            applyStatusEffect(unit, 'zhao_yun_dive', 0, config.durationSec * 1000, { pushedIds, level: unit.skillLevel });
             break;
 
         case 'liu_bei_heal':
@@ -1518,7 +1569,8 @@ function castSkill(unit) {
                 if (other.isDead || other.team !== unit.team) return;
                 if (getDistance(unit, other) <= config.radius) {
                     healUnit(other, lbHealVal);
-                    applyStatusEffect(other, 'liu_bei_buff', Math.round(config.dmgReduc * 100), config.durationSec * 1000);
+                    const lbDmgReduc = Math.round(config.dmgReduc * 100 * skillLvlMult);
+                    applyStatusEffect(other, 'liu_bei_buff', Math.min(lbDmgReduc, 90), config.durationSec * 1000);
                     createFloatingNumber(other, '護盾', 'shield');
                 }
             });
@@ -1565,14 +1617,14 @@ function castSkill(unit) {
                 }
             });
             if (maxHPEnergyEnemy) {
-                applyStatusEffect(maxHPEnergyEnemy, 'xun_yu_curse', 0, config.durationSec * 1000, { level: unit.skillLevel });
+                applyStatusEffect(maxHPEnergyEnemy, 'xun_yu_curse', 0, config.durationSec * 1000, { level: unit.skillLevel, casterZhili: unit.stats.zhili });
                 createFloatingNumber(maxHPEnergyEnemy, '詛咒', 'dmg');
                 addLog(`💀 荀彧對 ${maxHPEnergyEnemy.name} 施加了驅虎吞狼詛咒！`, 'skill');
             }
             break;
 
         case 'sun_quan_buff':
-            applyStatusEffect(unit, 'sun_quan_buff', Math.round(config.buffPct * 100), config.durationSec * 1000);
+            applyStatusEffect(unit, 'sun_quan_buff', Math.round(config.buffPct * 100), config.durationSec * 1000, { level: unit.skillLevel });
             createFloatingNumber(unit, '坐斷東南', 'shield');
             break;
 
@@ -1666,7 +1718,7 @@ function castSkill(unit) {
         case 'yuan_shao_line':
             activeUnits.forEach(other => {
                 if (other.isDead || other.team !== unit.team) return;
-                applyStatusEffect(other, 'yuan_shao_def_buff', 1, config.durationSec * 1000);
+                applyStatusEffect(other, 'yuan_shao_def_buff', 1, config.durationSec * 1000, { level: unit.skillLevel });
                 createFloatingNumber(other, '防禦提升', 'shield');
             });
             const dir = unit.team === 'player' ? -1 : 1;
