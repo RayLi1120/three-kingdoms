@@ -6,10 +6,14 @@ import time
 import urllib.parse
 
 # Global state for PvP
-# queue map: playerId -> { "team": [...], "joined_at": float, "paired_with": str, "seed": int }
 pvp_queue = {}
-# pairs map: playerId -> opponent_info
-pvp_pairs = {}
+player_lobbies = {}
+pvp_lobbies = {}
+# Preset bot names for shadow lobbies
+SHADOW_NAMES = [
+    '臥龍子弟', '鳳雛傳人', '天策門生', '白馬義軍',
+    '赤兔神騎', '劑仙弟子', '虎豹鐵騎', '錦帆遊客'
+]
 # default shadow database of player teams
 shadow_pool = [
     # Preset Team 1: Peach Garden trio
@@ -66,37 +70,84 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json_response(400, {'error': 'Missing playerId'})
                 return
                 
-            # Check if matched in real-time
-            if player_id in pvp_pairs:
-                opp_info = pvp_pairs[player_id]
-                self.send_json_response(200, {
-                    'status': 'matched',
-                    'opponent': opp_info['opponent'],
-                    'seed': opp_info['seed'],
-                    'isMirror': False
-                })
-                # Clean up match state once consumed
-                del pvp_pairs[player_id]
+            # If not in a lobby yet, check if we should trigger fallback
+            if player_id not in player_lobbies:
+                if fallback and player_id in pvp_queue:
+                    # Create a shadow lobby
+                    lobby_id = f"lobby_shadow_{random.randint(1000, 9999)}_{int(time.time())}"
+                    opp_team = random.choice(shadow_pool)
+                    opp_id = f"shadow_{random.randint(100, 999)}"
+                    opp_username = random.choice(SHADOW_NAMES)
+                    
+                    pvp_lobbies[lobby_id] = {
+                        "players": {
+                            player_id: { "team": pvp_queue[player_id]["team"], "username": pvp_queue[player_id].get("username", "主公"), "ready": False, "reported_result": None, "points": 0 },
+                            opp_id: { "team": opp_team, "username": opp_username, "ready": True, "reported_result": None, "points": 0 }
+                        },
+                        "current_round": 1,
+                        "prep_start_time": time.time(),
+                        "status": "prep",
+                        "combat_seed": random.randint(1, 100000),
+                        "is_shadow": True
+                    }
+                    
+                    player_lobbies[player_id] = lobby_id
+                    del pvp_queue[player_id]
+                    
+                    self.send_json_response(200, {
+                        'status': 'matched',
+                        'lobbyId': lobby_id
+                    })
+                    return
+                else:
+                    self.send_json_response(200, {'status': 'waiting'})
+                    return
+                    
+            # Player is in a lobby, retrieve details
+            lobby_id = player_lobbies[player_id]
+            if lobby_id not in pvp_lobbies:
+                # Lobby was destroyed or cleaned up
+                self.send_json_response(200, {'status': 'waiting'})
                 return
                 
-            # If waiting and fallback requested (over 5 seconds queue time)
-            if fallback and player_id in pvp_queue:
-                # Remove from queue and return a mirror team
-                opp_team = random.choice(shadow_pool)
-                seed = random.randint(1, 100000)
-                del pvp_queue[player_id]
-                self.send_json_response(200, {
-                    'status': 'matched',
-                    'opponent': {
-                        'playerId': f'shadow_{random.randint(100, 999)}',
-                        'team': opp_team
-                    },
-                    'seed': seed,
-                    'isMirror': True
-                })
-                return
+            lobby = pvp_lobbies[lobby_id]
+            
+            # Handle countdown time calculations
+            elapsed = time.time() - lobby["prep_start_time"]
+            remaining = max(0, 30 - int(elapsed))
+            
+            # Auto-ready if time ran out
+            if remaining == 0 and lobby["status"] == "prep":
+                # Mark everyone ready
+                for p_id in lobby["players"]:
+                    lobby["players"][p_id]["ready"] = True
+                lobby["status"] = "combat"
+                lobby["combat_seed"] = random.randint(1, 100000)
                 
-            self.send_json_response(200, {'status': 'waiting'})
+            opp_id = next(p for p in lobby["players"] if p != player_id)
+            opp_info = lobby["players"][opp_id]
+            my_info = lobby["players"][player_id]
+            
+            self.send_json_response(200, {
+                "status": "in_lobby",
+                "lobbyStatus": lobby["status"],
+                "lobbyId": lobby_id,
+                "currentRound": lobby["current_round"],
+                "remainingPrepTime": remaining,
+                "myPoints": my_info["points"],
+                "oppPoints": opp_info["points"],
+                "myReady": my_info["ready"],
+                "oppReady": opp_info["ready"],
+                "myUsername": my_info.get("username", "主公"),
+                "oppUsername": opp_info.get("username", "未知武將"),
+                "opponent": {
+                    "playerId": opp_id,
+                    "username": opp_info.get("username", "未知武將"),
+                    "team": opp_info["team"]
+                },
+                "seed": lobby["combat_seed"],
+                "isShadow": lobby["is_shadow"]
+            })
         else:
             super().do_GET()
 
@@ -116,62 +167,163 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/pvp/join':
             player_id = data.get('playerId')
             team = data.get('team', [])
+            username = data.get('username', '主公')[:12]  # cap at 12 chars
             
             if not player_id:
                 self.send_json_response(400, {'error': 'Missing playerId'})
                 return
                 
+            # Check if player is already in an active lobby
+            if player_id in player_lobbies:
+                lobby_id = player_lobbies[player_id]
+                self.send_json_response(200, {
+                    'status': 'matched',
+                    'lobbyId': lobby_id
+                })
+                return
+                
             # Look for another queuing player to pair
             matched_player_id = None
-            for q_id, q_info in pvp_queue.items():
+            for q_id in list(pvp_queue.keys()):
                 if q_id != player_id:
                     matched_player_id = q_id
                     break
                     
             if matched_player_id:
-                # Match found! Create a pair
-                seed = random.randint(1, 100000)
-                opp_info = pvp_queue[matched_player_id]
+                # Match found! Create a synchronized PvP lobby
+                lobby_id = f"lobby_{random.randint(1000, 9999)}_{int(time.time())}"
+                matched_username = pvp_queue[matched_player_id].get('username', '主公')
                 
-                # Pair player 1 (current requester) with player 2 (waiting)
-                pvp_pairs[player_id] = {
-                    'opponent': {
-                        'playerId': matched_player_id,
-                        'team': opp_info['team']
+                pvp_lobbies[lobby_id] = {
+                    "players": {
+                        player_id: { "team": team, "username": username, "ready": False, "reported_result": None, "points": 0 },
+                        matched_player_id: { "team": pvp_queue[matched_player_id]["team"], "username": matched_username, "ready": False, "reported_result": None, "points": 0 }
                     },
-                    'seed': seed
+                    "current_round": 1,
+                    "prep_start_time": time.time(),
+                    "status": "prep",
+                    "combat_seed": random.randint(1, 100000),
+                    "is_shadow": False
                 }
                 
-                # Pair player 2 with player 1
-                pvp_pairs[matched_player_id] = {
-                    'opponent': {
-                        'playerId': player_id,
-                        'team': team
-                    },
-                    'seed': seed
-                }
+                player_lobbies[player_id] = lobby_id
+                player_lobbies[matched_player_id] = lobby_id
                 
                 # Remove matched player from queue
-                del pvp_queue[matched_player_id]
-                
+                if matched_player_id in pvp_queue:
+                    del pvp_queue[matched_player_id]
+                if player_id in pvp_queue:
+                    del pvp_queue[player_id]
+                    
                 self.send_json_response(200, {
                     'status': 'matched',
-                    'opponent': pvp_pairs[player_id]['opponent'],
-                    'seed': seed,
-                    'isMirror': False
+                    'lobbyId': lobby_id
                 })
             else:
                 # No match found, join queue
                 pvp_queue[player_id] = {
-                    'team': team,
-                    'joined_at': time.time()
+                    "team": team,
+                    "username": username,
+                    "joined_at": time.time()
                 }
                 self.send_json_response(200, {'status': 'waiting'})
+                
+        elif path == '/api/pvp/lobby/ready':
+            player_id = data.get('playerId')
+            lobby_id = data.get('lobbyId')
+            team = data.get('team', [])
+            
+            if not player_id or not lobby_id or lobby_id not in pvp_lobbies:
+                self.send_json_response(400, {'error': 'Invalid request'})
+                return
+                
+            lobby = pvp_lobbies[lobby_id]
+            if player_id in lobby["players"]:
+                lobby["players"][player_id]["team"] = team
+                lobby["players"][player_id]["ready"] = True
+                
+            # In a Shadow lobby, the shadow opponent is always ready
+            if lobby["is_shadow"]:
+                lobby["status"] = "combat"
+                lobby["combat_seed"] = random.randint(1, 100000)
+            else:
+                # Check if all players in the lobby are ready
+                all_ready = all(p_info["ready"] for p_info in lobby["players"].values())
+                if all_ready:
+                    lobby["status"] = "combat"
+                    lobby["combat_seed"] = random.randint(1, 100000)
+                    
+            self.send_json_response(200, {"status": "ok"})
+            
+        elif path == '/api/pvp/lobby/report':
+            player_id = data.get('playerId')
+            lobby_id = data.get('lobbyId')
+            result = data.get('result')  # 'victory' or 'defeat'
+            
+            if not player_id or not lobby_id or lobby_id not in pvp_lobbies:
+                self.send_json_response(400, {'error': 'Invalid request'})
+                return
+                
+            lobby = pvp_lobbies[lobby_id]
+            if player_id in lobby["players"]:
+                lobby["players"][player_id]["reported_result"] = result
+                
+            # Resolve result for shadow lobby instantly
+            if lobby["is_shadow"]:
+                opp_id = next(p for p in lobby["players"] if p != player_id)
+                lobby["players"][opp_id]["reported_result"] = "defeat" if result == "victory" else "victory"
+                
+            # Check if all reported
+            all_reported = all(p_info["reported_result"] is not None for p_info in lobby["players"].values())
+            if all_reported:
+                # Determine score gain for the round
+                # Rounds 1-5: +1, 6-10: +2, 11-15: +3, 16-20: +4
+                r = lobby["current_round"]
+                score_gain = 1
+                if r > 15:
+                    score_gain = 4
+                elif r > 10:
+                    score_gain = 3
+                elif r > 5:
+                    score_gain = 2
+                    
+                for p_id, p_info in lobby["players"].items():
+                    if p_info["reported_result"] == "victory":
+                        p_info["points"] += score_gain
+                        
+                # Advance round
+                lobby["current_round"] += 1
+                
+                # Check game over
+                if lobby["current_round"] > 20:
+                    lobby["status"] = "game_over"
+                else:
+                    lobby["status"] = "prep"
+                    lobby["prep_start_time"] = time.time()
+                    # Reset player ready/results for the next round
+                    for p_id, p_info in lobby["players"].items():
+                        p_info["ready"] = False
+                        p_info["reported_result"] = None
+                        
+                    # If it's a shadow lobby, update the shadow opponent's team for the next round
+                    if lobby["is_shadow"]:
+                        opp_id = next(p for p in lobby["players"] if p != player_id)
+                        lobby["players"][opp_id]["team"] = random.choice(shadow_pool)
+                        lobby["players"][opp_id]["ready"] = True
+                        
+            self.send_json_response(200, {"status": "ok"})
                 
         elif path == '/api/pvp/cancel':
             player_id = data.get('playerId')
             if player_id in pvp_queue:
                 del pvp_queue[player_id]
+            if player_id in player_lobbies:
+                lobby_id = player_lobbies[player_id]
+                if lobby_id in pvp_lobbies:
+                    del pvp_lobbies[lobby_id]
+                for p_id, l_id in list(player_lobbies.items()):
+                    if l_id == lobby_id:
+                        del player_lobbies[p_id]
             self.send_json_response(200, {'status': 'cancelled'})
             
         elif path == '/api/pvp/upload':

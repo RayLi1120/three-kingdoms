@@ -18,6 +18,8 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 let pvpTimerInterval = null;
 let pvpLobbyPollInterval = null;
 let pvpWaitingForReport = false; // True while waiting for opponent to also submit report
+
+// Username: persists across sessions via localStorage
 let playerId = localStorage.getItem('pvp_player_id');
 if (!playerId) {
     playerId = 'player_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
@@ -44,6 +46,8 @@ export const state = {
     gameState: 'prep', // 'prep' or 'battle'
     isPvp: false,
     pvpPlayerId: playerId,
+    username: localStorage.getItem('pvp_username') || '',
+    pvpOppUsername: '',
 
     // PvP Lobby state
     pvpLobbyId: null,
@@ -101,12 +105,15 @@ let elMenuOverlay, elBtnMenuStart, elBtnMenuPvp, elBtnMenuRoster, elBtnToggleAud
 let elBtnCloseRoster, elRosterOverlay, elRosterGrid, elRosterDetailOverlay, elBtnCloseRosterDetail;
 let elBtnQuickAudio, elBtnQuickSpeed, elSellZone, elMobileIpLink;
 let elPvpOverlay, elPvpStatusText, elPvpTimerVal, elBtnPvpCancel;
+// Username DOM elements
+let elUsernameOverlay, elUsernameInput, elUsernameConfirm, elUsernameError, elUsernameCharCount, elPlayerTag;
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
     cacheElements();
     initGrid();
     setupEventListeners();
+    setupUsernameOverlay();
     fetchLocalIp();
 });
 
@@ -153,6 +160,13 @@ function cacheElements() {
     elPvpStatusText = document.getElementById('pvp-status-text');
     elPvpTimerVal = document.getElementById('pvp-timer-val');
     elBtnPvpCancel = document.getElementById('btn-pvp-cancel');
+    // Username elements
+    elUsernameOverlay  = document.getElementById('username-overlay');
+    elUsernameInput    = document.getElementById('username-input');
+    elUsernameConfirm  = document.getElementById('btn-username-confirm');
+    elUsernameError    = document.getElementById('username-error');
+    elUsernameCharCount = document.getElementById('username-char-count');
+    elPlayerTag        = document.getElementById('player-tag');
 }
 
 function initGrid() {
@@ -314,10 +328,11 @@ function updateUI() {
     if (state.isPvp && state.pvpLobbyId) {
         // PvP mode: replace hearts with score display
         if (livesLabel) livesLabel.textContent = '積分';
+        const oppLabel = state.pvpOppUsername ? state.pvpOppUsername : '對手';
         elLivesContainer.innerHTML = `
             <span style="color:var(--gold); font-weight:700; font-size:0.9rem;">己方: ${state.pvpMyPoints}</span>
             <span style="color:var(--text-secondary); margin:0 4px;">|</span>
-            <span style="color:#f87171; font-weight:700; font-size:0.9rem;">對手: ${state.pvpOppPoints}</span>
+            <span style="color:#f87171; font-weight:700; font-size:0.9rem;">${oppLabel}: ${state.pvpOppPoints}</span>
         `;
     } else {
         // Single player: heart display
@@ -1526,6 +1541,108 @@ function renderActiveFatesUI() {
 // ==========================================
 // MENU AND SETTINGS HANDLERS
 // ==========================================
+// ==========================================
+// USERNAME SYSTEM
+// ==========================================
+
+function setupUsernameOverlay() {
+    // Update header player tag regardless
+    updatePlayerTag();
+    
+    const savedUsername = localStorage.getItem('pvp_username');
+    if (savedUsername && savedUsername.trim().length >= 2) {
+        // Already have a username — hide entry overlay, show main menu
+        if (elUsernameOverlay) elUsernameOverlay.classList.add('hidden');
+        if (elMenuOverlay)     elMenuOverlay.classList.remove('hidden');
+    } else {
+        // First visit — hide menu, show username entry
+        if (elMenuOverlay)     elMenuOverlay.classList.add('hidden');
+        if (elUsernameOverlay) elUsernameOverlay.classList.remove('hidden');
+        // Auto-focus input after a small delay (lets overlay animate in)
+        setTimeout(() => { if (elUsernameInput) elUsernameInput.focus(); }, 350);
+    }
+    
+    if (!elUsernameInput || !elUsernameConfirm) return;
+    
+    // Live character counter
+    elUsernameInput.addEventListener('input', () => {
+        const len = elUsernameInput.value.length;
+        if (elUsernameCharCount) {
+            elUsernameCharCount.textContent = `${len} / 12`;
+            elUsernameCharCount.classList.toggle('near-limit', len >= 10);
+        }
+        // Clear error on typing
+        showUsernameError('');
+        elUsernameInput.classList.remove('input-error');
+    });
+    
+    // Enter key triggers confirm
+    elUsernameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') confirmUsername();
+    });
+    
+    elUsernameConfirm.addEventListener('click', confirmUsername);
+    
+    // Clicking the player-tag in the header re-opens the username overlay
+    if (elPlayerTag) {
+        elPlayerTag.addEventListener('click', () => {
+            if (elUsernameInput) {
+                elUsernameInput.value = state.username;
+                if (elUsernameCharCount) elUsernameCharCount.textContent = `${state.username.length} / 12`;
+            }
+            showUsernameError('');
+            if (elUsernameOverlay) elUsernameOverlay.classList.remove('hidden');
+            setTimeout(() => { if (elUsernameInput) elUsernameInput.focus(); }, 200);
+        });
+    }
+}
+
+function confirmUsername() {
+    if (!elUsernameInput) return;
+    const raw = elUsernameInput.value.trim();
+    
+    if (raw.length < 2) {
+        showUsernameError('名號至少需要 2 個字元！');
+        elUsernameInput.classList.add('input-error');
+        elUsernameInput.focus();
+        return;
+    }
+    if (raw.length > 12) {
+        showUsernameError('名號最多 12 個字元！');
+        elUsernameInput.classList.add('input-error');
+        return;
+    }
+    
+    // Save
+    state.username = raw;
+    localStorage.setItem('pvp_username', raw);
+    updatePlayerTag();
+    
+    // Hide entry overlay, show main menu
+    if (elUsernameOverlay) elUsernameOverlay.classList.add('hidden');
+    if (elMenuOverlay)     elMenuOverlay.classList.remove('hidden');
+}
+
+function showUsernameError(msg) {
+    if (!elUsernameError) return;
+    elUsernameError.textContent = msg;
+    if (msg) {
+        elUsernameError.classList.add('visible');
+    } else {
+        elUsernameError.classList.remove('visible');
+    }
+}
+
+function updatePlayerTag() {
+    if (!elPlayerTag) return;
+    const name = state.username || localStorage.getItem('pvp_username') || '';
+    if (name) {
+        elPlayerTag.innerHTML = `⚔ ${name} <span class="edit-hint">(更改)</span>`;
+    } else {
+        elPlayerTag.innerHTML = '⚔ 設定名號...';
+    }
+}
+
 function handleMenuStart() {
     if (elMenuOverlay) {
         elMenuOverlay.classList.add('hidden');
@@ -1595,7 +1712,7 @@ async function joinPvpQueue() {
         const res = await fetch(`${API_BASE_URL}/api/pvp/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId: state.pvpPlayerId, team: [] })
+            body: JSON.stringify({ playerId: state.pvpPlayerId, team: [], username: state.username || '主公' })
         });
         if (!res.ok) throw new Error('Server error');
         const data = await res.json();
@@ -1669,13 +1786,14 @@ async function pollLobbyState() {
         const prevLobbyStatus = state.pvpLobbyStatus;
         
         // Sync server state to client
-        state.pvpLobbyStatus = data.lobbyStatus;
-        state.pvpMyPoints    = data.myPoints;
-        state.pvpOppPoints   = data.oppPoints;
+        state.pvpLobbyStatus   = data.lobbyStatus;
+        state.pvpMyPoints      = data.myPoints;
+        state.pvpOppPoints     = data.oppPoints;
         state.pvpTimeRemaining = data.remainingPrepTime;
-        state.pvpMyReady     = data.myReady;
-        state.round          = data.currentRound;
-        
+        state.pvpMyReady       = data.myReady;
+        state.round            = data.currentRound;
+        if (data.oppUsername)  state.pvpOppUsername = data.oppUsername;
+
         if (data.lobbyStatus === 'prep') {
             if (pvpWaitingForReport) {
                 // Both players reported — advance to next round
@@ -1770,9 +1888,12 @@ function startPvpCombat(data) {
     renderBench();
     renderBoard();
     
-    const oppName = data.opponent.playerId.startsWith('shadow_')
-        ? `世家子弟_${data.opponent.playerId.split('_')[1]}`
-        : `主公_${data.opponent.playerId.slice(-6)}`;
+    const oppName = data.opponent.username
+        || (data.opponent.playerId.startsWith('shadow_')
+            ? `世家子弟_${data.opponent.playerId.split('_')[1]}`
+            : `主公_${data.opponent.playerId.slice(-6)}`);
+    // Cache for score display
+    state.pvpOppUsername = oppName;
     
     addLog(`⚔ 第 ${state.round} 回合戰鬥開始！對手：${oppName} ⚔`, 'victory');
     if (data.isShadow) addLog('📢 無真實對手，已載入影子陣容。', 'system');
@@ -1885,6 +2006,7 @@ function resetGameToTitle() {
     state.pvpLobbyId       = null;
     state.pvpMyPoints      = 0;
     state.pvpOppPoints     = 0;
+    state.pvpOppUsername   = '';
     state.pvpTimeRemaining = 30;
     state.pvpMyReady       = false;
     state.pvpLobbyStatus   = null;

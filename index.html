@@ -43,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
     <div class="game-container">
@@ -51,6 +51,7 @@
         <header class="game-header glass">
             <div class="header-brand">
                 <h1 class="game-title">三國策 <span class="subtitle">英雄自走棋</span></h1>
+                <div class="player-tag" id="player-tag" title="點擊更改名號">⚔ 設定名號中...</div>
             </div>
             <div class="header-stats">
                 <div class="stat-box" id="stat-round">
@@ -219,6 +220,33 @@
         </div>
     </div>
 
+    <!-- Username Entry Overlay (appears before main menu on first launch) -->
+    <div class="overlay hidden" id="username-overlay" style="z-index: 10010;">
+        <div class="menu-card glass username-card">
+            <div class="username-deco">⚔</div>
+            <h1 class="menu-title">三國策</h1>
+            <p class="menu-subtitle">英雄自走棋</p>
+            <div class="username-divider"><span>立下名號，方能稱雄天下</span></div>
+            <div class="username-entry">
+                <label class="username-label" for="username-input">武將名號</label>
+                <div class="username-input-wrapper">
+                    <input
+                        type="text"
+                        id="username-input"
+                        placeholder="例：臥龍先生"
+                        maxlength="12"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <span class="username-char-count" id="username-char-count">0 / 12</span>
+                </div>
+                <p class="username-error" id="username-error"></p>
+                <button class="btn btn-menu btn-menu-start" id="btn-username-confirm">確認入場 ⚔</button>
+                <p class="username-hint">2–12 個字元，中英文均可</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Title Screen / Menu Overlay -->
     <div class="overlay" id="menu-overlay">
         <div class="menu-card glass">
@@ -331,6 +359,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/game.js?v=14"></script>
+    <script type="module" src="js/game.js?v=15"></script>
 </body>
 </html>
