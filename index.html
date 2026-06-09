@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Kingdoms: Legends Auto-Battler</title>
+    <!-- Global JS Error Diagnostic Banner -->
+    <script>
+        window.addEventListener('error', function(e) {
+            const div = document.createElement('div');
+            div.style.position = 'fixed';
+            div.style.top = '0';
+            div.style.left = '0';
+            div.style.width = '100%';
+            div.style.background = '#ef4444';
+            div.style.color = 'white';
+            div.style.padding = '12px';
+            div.style.zIndex = '999999';
+            div.style.fontFamily = 'monospace';
+            div.style.fontSize = '14px';
+            div.style.borderBottom = '3px solid #b91c1c';
+            div.textContent = '❌ JS ERROR: ' + e.message + ' in ' + e.filename + ' at line ' + e.lineno;
+            document.body.appendChild(div);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            const div = document.createElement('div');
+            div.style.position = 'fixed';
+            div.style.top = '0';
+            div.style.left = '0';
+            div.style.width = '100%';
+            div.style.background = '#f59e0b';
+            div.style.color = 'white';
+            div.style.padding = '12px';
+            div.style.zIndex = '999999';
+            div.style.fontFamily = 'monospace';
+            div.style.fontSize = '14px';
+            div.style.borderBottom = '3px solid #d97706';
+            div.textContent = '⚠️ UNHANDLED REJECTION: ' + e.reason;
+            document.body.appendChild(div);
+        });
+    </script>
+    <!-- Google Fonts for classic and modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=12">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header: Player Stats and Game Info -->
+        <header class="game-header glass">
+            <div class="header-brand">
+                <h1 class="game-title">三國策 <span class="subtitle">英雄自走棋</span></h1>
+            </div>
+            <div class="header-stats">
+                <div class="stat-box" id="stat-round">
+                    <span class="label">回合</span>
+                    <span class="value">1</span>
+                </div>
+                <div class="stat-box" id="stat-gold">
+                    <span class="label">金幣</span>
+                    <span class="value icon-gold">10</span>
+                </div>
+                <div class="stat-box" id="stat-cost">
+                    <span class="label">上陣統禦值</span>
+                    <span class="value" id="cost-display">0 / 5</span>
+                    <div class="cost-bar-container">
+                        <div class="cost-bar" id="cost-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <div class="stat-box" id="stat-lives">
+                    <span class="label">生命值</span>
+                    <div class="lives-container">
+                        <span class="heart active">♥</span>
+                        <span class="heart active">♥</span>
+                        <span class="heart active">♥</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body: Arena + Sidebar -->
+        <main class="game-main">
+            <!-- Left Area: Battlefield -->
+            <section class="arena-section glass">
+                <div class="battlefield-wrapper">
+                    <!-- Column coordinates (1-8) -->
+                    <div class="grid-labels-x">
+                        <div>A</div><div>B</div><div>C</div><div>D</div><div>E</div><div>F</div><div>G</div><div>H</div>
+                    </div>
+                    
+                    <div class="arena-layout">
+                        <!-- Row coordinates (1-10) -->
+                        <div class="grid-labels-y">
+                            <div>10</div><div>9</div><div>8</div><div>7</div><div>6</div>
+                            <div>5</div><div>4</div><div>3</div><div>2</div><div>1</div>
+                        </div>
+                        
+                        <!-- 8x10 Board Grid -->
+                        <div class="battle-grid" id="battle-grid">
+                            <!-- JS will dynamically populate 80 grid cells -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Area: Sidebar Detail & Logs -->
+            <aside class="sidebar-section">
+                <!-- Unit Card Detail -->
+                <div class="detail-card glass" id="detail-panel">
+                    <div class="detail-placeholder">
+                        <div class="placeholder-icon">⚔</div>
+                        <p>选择一名武將或防禦建築以查看其屬性與戰法詳情。</p>
+                    </div>
+                    <div class="detail-content hidden" id="detail-content">
+                        <div class="unit-portrait-large" id="detail-portrait"></div>
+                        <div class="unit-header">
+                            <h2 class="unit-name" id="detail-name">諸葛亮</h2>
+                            <span class="unit-role" id="detail-role">後排法師 / 治療</span>
+                        </div>
+                        <div class="unit-cost-tag" id="detail-cost">消耗：4 統禦</div>
+                        <div class="unit-stats-grid">
+                            <div class="detail-stat">
+                                <span class="stat-label">兵力 (HP)</span>
+                                <span class="stat-val" id="detail-hp">600 / 600</span>
+                            </div>
+                            <div class="detail-stat">
+                                <span class="stat-label">武力 (物攻)</span>
+                                <span class="stat-val" id="detail-dmg">45</span>
+                            </div>
+                            <div class="detail-stat">
+                                <span class="stat-label">攻速</span>
+                                <span class="stat-val" id="detail-atk-speed">1.0/s</span>
+                            </div>
+                            <div class="detail-stat">
+                                <span class="stat-label">射程</span>
+                                <span class="stat-val" id="detail-range">4 格</span>
+                            </div>
+                        </div>
+                        <div class="unit-skill-box">
+                            <h3 class="skill-title-label">第一戰法：<span id="detail-skill-name">杯蛇鬼車</span></h3>
+                            <p class="skill-desc" id="detail-skill-desc">對範圍內的敵人造成謀略傷害並治療盟友。</p>
+                        </div>
+                        <div class="unit-skill-box" id="detail-extra-skill-box">
+                            <h3 class="skill-title-label">第二戰法：<span id="detail-extra-skill-name">-</span></h3>
+                            <p class="skill-desc" id="detail-extra-skill-desc">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Synergy Panel -->
+                <div class="synergy-panel glass" id="synergy-panel">
+                    <div class="synergy-header">活躍羈絆</div>
+                    <div class="synergy-body" id="synergy-body">
+                        <div class="synergy-empty">暫無活躍羈絆。上陣相同的陣营或特定武將來激活！</div>
+                    </div>
+                </div>
+
+                <!-- Combat Log -->
+                <div class="combat-log-container glass">
+                    <div class="log-header">戰報日志</div>
+                    <div class="log-body" id="log-body">
+                        <div class="log-entry system">欢迎來到三國策！招募武將，排兵布陣，准備迎戰。</div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Bottom Area: Shop & Operations -->
+        <footer class="game-footer glass">
+            <!-- Operations panel (Gold upgrades, shop refresh, start battle) -->
+            <div class="control-panel">
+                <button class="btn btn-upgrade" id="btn-upgrade-cost">
+                    <span class="btn-title">提升上陣統禦值</span>
+                    <span class="btn-cost" id="upgrade-gold-cost">6 金幣</span>
+                </button>
+                <button class="btn btn-refresh" id="btn-refresh-shop">
+                    <span class="btn-title">刷新招募</span>
+                    <span class="btn-cost">2 金幣</span>
+                </button>
+                <button class="btn btn-start pulsing" id="btn-start-battle">
+                    進入戰斗
+                </button>
+                <div class="quick-settings">
+                    <button class="btn-quick-toggle" id="btn-quick-audio" title="切換遊戲音效">🔊 開启</button>
+                    <button class="btn-quick-toggle" id="btn-quick-speed" title="调整戰斗速度">⚡ 1X</button>
+                </div>
+            </div>
+
+            <!-- Shop Deck / Recruit Slots -->
+            <div class="shop-container" style="position: relative;">
+                <div class="shop-title-bar">
+                    <span class="shop-label">招募武將 / 防禦設施</span>
+                    <span class="shop-tip">點擊卡牌招募武將（需消耗金幣），並將其放置在己方下方的4行中</span>
+                </div>
+                <div class="shop-slots-wrapper" style="position: relative;">
+                    <div class="shop-slots" id="shop-slots">
+                        <!-- Shop slots will be rendered dynamically -->
+                    </div>
+                    <div id="drag-sell-zone" class="sell-zone hidden">
+                        <span class="sell-zone-icon">🪙</span>
+                        <span class="sell-zone-text">點擊或拖拽至此出售武將</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Screen Overlays for Battle Transitions / Game Over -->
+    <div class="overlay hidden" id="game-overlay">
+        <div class="overlay-card glass">
+            <h2 class="overlay-title" id="overlay-title">勝利</h2>
+            <p class="overlay-desc" id="overlay-desc">第 1 回合通關！</p>
+            <div class="overlay-rewards" id="overlay-rewards">
+                <div>+5 回合收益金幣</div>
+                <div>+1 勝利獎勵金幣</div>
+            </div>
+            <button class="btn btn-primary" id="btn-overlay-action">進入下一回合</button>
+        </div>
+    </div>
+
+    <!-- Main Title Screen / Menu Overlay -->
+    <div class="overlay" id="menu-overlay">
+        <div class="menu-card glass">
+            <h1 class="menu-title">三國策</h1>
+            <p class="menu-subtitle">英雄自走棋</p>
+            
+            <div class="menu-buttons">
+                <button class="btn btn-menu btn-menu-start" id="btn-menu-start">開始征程</button>
+                <button class="btn btn-menu btn-menu-roster" id="btn-menu-roster">武將圖鑑</button>
+            </div>
+            
+            <div class="menu-settings">
+                <div class="setting-title">遊戲設置</div>
+                <div class="setting-row">
+                    <span>音效合成器:</span>
+                    <button class="btn-setting-toggle" id="btn-toggle-audio">開启</button>
+                </div>
+                <div class="setting-row">
+                    <span>戰斗演進速度:</span>
+                    <div class="speed-selector">
+                        <button class="btn-speed-select active" data-speed="1">1X</button>
+                        <button class="btn-speed-select" data-speed="2">2X</button>
+                        <button class="btn-speed-select" data-speed="3">3X</button>
+                    </div>
+                </div>
+            </div>
+            <div id="mobile-ip-link" class="mobile-ip-link"></div>
+        </div>
+    </div>
+
+    <!-- Hero Roster Gallery Modal -->
+    <div class="overlay hidden" id="roster-overlay">
+        <div class="roster-card glass">
+            <div class="roster-header">
+                <h2>武將圖鑑館</h2>
+                <button class="btn-close-roster" id="btn-close-roster">&times;</button>
+            </div>
+            <div class="roster-grid" id="roster-grid">
+                <!-- JS will dynamically populate all heroes -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Roster Detail Modal -->
+    <div class="overlay hidden" id="roster-detail-overlay" style="z-index: 10002;">
+        <div class="roster-detail-card glass">
+            <button class="btn-close-roster" id="btn-close-roster-detail">&times;</button>
+            <div class="roster-detail-content">
+                <div class="roster-detail-left">
+                    <div class="roster-detail-portrait" id="roster-detail-portrait"></div>
+                    <div class="roster-detail-name-row">
+                        <span class="roster-detail-name" id="roster-detail-name">諸葛亮</span>
+                        <span class="roster-detail-cost" id="roster-detail-cost">🪙 4</span>
+                    </div>
+                    <div class="roster-detail-faction-badge" id="roster-detail-faction">蜀</div>
+                    <div class="roster-detail-role" id="roster-detail-role">後排法師 / 治療</div>
+                </div>
+                <div class="roster-detail-right">
+                    <div class="roster-detail-stats-header">基础屬性</div>
+                    <div class="roster-detail-stats-grid">
+                        <div class="detail-stat">
+                            <span class="stat-label">兵力 (HP)</span>
+                            <span class="stat-val" id="roster-detail-hp">600 / 600</span>
+                        </div>
+                        <div class="detail-stat">
+                            <span class="stat-label">武力 (物攻)</span>
+                            <span class="stat-val" id="roster-detail-wuli">45</span>
+                        </div>
+                        <div class="detail-stat">
+                            <span class="stat-label">智力 (謀攻)</span>
+                            <span class="stat-val" id="roster-detail-zhili">120</span>
+                        </div>
+                        <div class="detail-stat">
+                            <span class="stat-label">統率 (防禦)</span>
+                            <span class="stat-val" id="roster-detail-tongshuai">65</span>
+                        </div>
+                        <div class="detail-stat">
+                            <span class="stat-label">攻擊速度</span>
+                            <span class="stat-val" id="roster-detail-atk-speed">1.0/s</span>
+                        </div>
+                        <div class="detail-stat">
+                            <span class="stat-label">攻擊射程</span>
+                            <span class="stat-val" id="roster-detail-range">4 格</span>
+                        </div>
+                    </div>
+                    
+                    <div class="unit-skill-box" style="margin-top:16px;">
+                        <h3 class="skill-title-label">第一戰法：<span id="roster-detail-skill-name">杯蛇鬼車</span> <span class="skill-badge active-type">主動</span></h3>
+                        <p class="skill-desc" id="roster-detail-skill-desc">造成謀略傷害並為友軍恢復生命值。</p>
+                    </div>
+                    <div class="unit-skill-box" id="roster-detail-extra-skill-box" style="margin-top:12px;">
+                        <h3 class="skill-title-label">第二戰法：<span id="roster-detail-extra-skill-name">-</span></h3>
+                        <p class="skill-desc" id="roster-detail-extra-skill-desc">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/game.js?v=12"></script>
+</body>
+</html>
