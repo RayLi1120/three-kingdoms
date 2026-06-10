@@ -654,7 +654,7 @@ function injectBenchUI() {
             <div class="bench-slots" id="bench-slots"></div>
         `;
         const wrapper = document.querySelector('.shop-slots-wrapper') || elShopSlots;
-        if (wrapper && shopContainer.contains(wrapper)) {
+        if (wrapper && wrapper.parentNode === shopContainer) {
             shopContainer.insertBefore(benchContainer, wrapper);
         } else {
             shopContainer.appendChild(benchContainer);
