@@ -43,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
     <div class="game-container">
@@ -209,6 +209,11 @@
 
             <!-- Shop Deck / Recruit Slots / Skills Shop -->
             <div class="shop-container" style="position: relative;">
+                <!-- Bench strip: always visible above the shop -->
+                <div id="bench-container" class="bench-container">
+                    <span class="bench-label">儲備欄 BENCH（上陣消耗：0）</span>
+                    <div class="bench-slots" id="bench-slots"></div>
+                </div>
                 <div class="shop-tabs">
                     <button class="shop-tab active" id="shop-tab-heroes">招募武將</button>
                     <button class="shop-tab" id="shop-tab-skills">戰法研習</button>
@@ -439,6 +444,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/game.js?v=22"></script>
+    <script type="module" src="js/game.js?v=23"></script>
 </body>
 </html>
