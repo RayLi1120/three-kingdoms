@@ -21,6 +21,7 @@ function seededRandom() {
 // ==========================================
 let activeUnits = []; // Active participants in the current battle
 let activeFates = []; // Active synergies/fates passed from game.js
+let oppActiveFates = []; // Active synergies/fates for opponent in PvP
 let activeFactions = { shu: 0, wei: 0, wu: 0, qun: 0 };
 let settings = { audio: true, speed: 1 };
 let battleTimer = null;
@@ -436,7 +437,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
 
     // Calculate opponent active fates and factions if in PvP
     const oppActiveFactions = { shu: 0, wei: 0, wu: 0, qun: 0 };
-    const oppActiveFates = [];
+    oppActiveFates = [];
     if (pvpConfig && pvpConfig.opponentUnits) {
         const oppCountedTemplates = new Set();
         const oppFactionUniqueCount = { shu: 0, wei: 0, wu: 0, qun: 0 };
