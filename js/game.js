@@ -604,7 +604,8 @@ function refreshShopManual() {
 function buyUnit(shopIndex) {
     if (state.gameState !== 'prep') return;
     restorePrepUI();
-    
+    state.selectedSkillIndex = -1;
+
     const template = state.shopSlots[shopIndex];
     if (!template) return;
     
@@ -678,7 +679,7 @@ function injectBenchUI() {
             .bench-slots {
                 display: flex;
                 gap: 6px;
-                height: 48px;
+                height: 72px;
             }
             .bench-slot {
                 flex: 1;
@@ -686,11 +687,14 @@ function injectBenchUI() {
                 border: 1px dashed rgba(255, 255, 255, 0.1);
                 border-radius: 6px;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 cursor: pointer;
                 position: relative;
                 transition: background 0.2s, border 0.2s;
+                gap: 3px;
+                padding: 3px 2px 4px;
             }
             .bench-slot.selected {
                 border-color: var(--blue);
@@ -698,23 +702,38 @@ function injectBenchUI() {
                 box-shadow: 0 0 8px rgba(30, 144, 255, 0.2);
             }
             .bench-slot .bench-token {
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
+                width: 34px;
+                height: 30px;
+                border-radius: 4px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: #fff;
                 font-weight: bold;
-                font-size: 0.85rem;
+                font-size: 0.8rem;
                 box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-                border: 2px solid;
+                border: 1.5px solid;
+                position: relative;
+                overflow: hidden;
             }
             .bench-slot .bench-stars {
                 position: absolute;
-                top: -2px;
-                font-size: 0.55rem;
+                top: 1px;
+                right: 2px;
+                font-size: 0.42rem;
                 color: var(--gold);
+                line-height: 1;
+            }
+            .bench-slot .bench-name {
+                font-size: 0.58rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+                text-align: center;
+                line-height: 1;
             }
             @media (max-width: 768px) {
                 .bench-container {
@@ -724,21 +743,23 @@ function injectBenchUI() {
                     font-size: 0.6rem;
                 }
                 .bench-slots {
-                    height: 38px;
+                    height: 60px;
                     gap: 4px;
                 }
                 .bench-slot {
                     border-radius: 4px;
                 }
                 .bench-slot .bench-token {
-                    width: 28px;
-                    height: 28px;
-                    font-size: 0.7rem;
-                    border-width: 1.5px;
+                    width: 26px;
+                    height: 22px;
+                    font-size: 0.65rem;
+                    border-width: 1px;
                 }
                 .bench-slot .bench-stars {
-                    font-size: 0.45rem;
-                    top: -4px;
+                    font-size: 0.4rem;
+                }
+                .bench-slot .bench-name {
+                    font-size: 0.52rem;
                 }
             }
         `;
@@ -775,8 +796,9 @@ function renderBench() {
             slot.innerHTML = `
                 <div class="bench-token" style="${tokenStyle}">
                     ${template.portrait ? '' : template.avatarText}
+                    <div class="bench-stars">${'★'.repeat(unit.star)}</div>
                 </div>
-                <div class="bench-stars">${'★'.repeat(unit.star)}</div>
+                <div class="bench-name">${template.name}</div>
             `;
             
             slot.addEventListener('click', (e) => {
@@ -1364,7 +1386,7 @@ function showDetailCard(unit, allowUpgrade = true) {
                 const emptySlot = state.bench.findIndex(s => s === null);
                 if (emptySlot === -1) { addLog('儲備欄已滿！', 'damage'); return; }
                 state.deployedUnits.splice(idx, 1);
-                state.bench[emptySlot] = { templateId: u.templateId, star: u.star, skillLevel: u.skillLevel };
+                state.bench[emptySlot] = { templateId: u.templateId, star: u.star, skillLevel: u.skillLevel, equippedSkill: u.equippedSkill || null };
                 state.selectedEntity = null;
                 recalculateDeployCost();
                 addLog(`${UNIT_TEMPLATES[u.templateId].name} 已回到儲備欄。`, 'system');
@@ -1385,6 +1407,10 @@ function showDetailCard(unit, allowUpgrade = true) {
             else { u = state.deployedUnits[idx]; if (u) state.deployedUnits.splice(idx, 1); }
             if (u) {
                 const tmpl = UNIT_TEMPLATES[u.templateId];
+                if (u.equippedSkill) {
+                    state.skillsInventory.push(u.equippedSkill);
+                    addLog(`已將 ${tmpl.name} 裝備的戰法 [${u.equippedSkill.name}] 退回至戰法倉庫。`, 'system');
+                }
                 const gold = tmpl.cost * u.star;
                 state.gold += gold;
                 addLog(`成功出售 ${tmpl.name}（${u.star}星），獲得 🪙 ${gold} 金幣。`, 'victory');
