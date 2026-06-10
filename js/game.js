@@ -206,6 +206,10 @@ function setupEventListeners() {
     elBtnMenuStart.addEventListener('click', handleMenuStart);
     if (elBtnMenuPvp) elBtnMenuPvp.addEventListener('click', handleMenuPvp);
     if (elBtnPvpCancel) elBtnPvpCancel.addEventListener('click', cancelPvpMatchmaking);
+    const elBtnPvpStartQueue = document.getElementById('btn-pvp-start-queue');
+    if (elBtnPvpStartQueue) {
+        elBtnPvpStartQueue.addEventListener('click', startPvpQueueFlow);
+    }
     elBtnMenuRoster.addEventListener('click', handleMenuRoster);
     elBtnToggleAudio.addEventListener('click', handleToggleAudio);
     elBtnCloseRoster.addEventListener('click', handleCloseRoster);
@@ -1688,31 +1692,66 @@ function handleMenuPvp() {
     
     // Start prep phase so player can arrange units while waiting
     startPrepPhase();
-    addLog('📢 多人匹配對戰模式。正在搜尋對手，請同時布置陣容...', 'system');
     
-    // Show matchmaking overlay and join queue
+    // Show matchmaking overlay and wait for room confirmation
     showPvpMatchmakingOverlay();
-    joinPvpQueue();
 }
 
 function showPvpMatchmakingOverlay() {
     if (elPvpOverlay) elPvpOverlay.classList.remove('hidden');
-    if (elBtnPvpCancel) elBtnPvpCancel.style.display = '';
-    if (elPvpTimerVal) elPvpTimerVal.textContent = '0';
-    if (elPvpStatusText) {
-        elPvpStatusText.innerHTML = '正在召集各路群雄...<br>已等待 <span id="pvp-timer-val" style="color: var(--gold); font-weight: bold;">0</span> 秒';
+    
+    const elSetupZone = document.getElementById('pvp-setup-zone');
+    const elQueueZone = document.getElementById('pvp-queue-zone');
+    const elMatchedZone = document.getElementById('pvp-matched-zone');
+    
+    if (elSetupZone) elSetupZone.classList.remove('hidden');
+    if (elQueueZone) elQueueZone.classList.add('hidden');
+    if (elMatchedZone) elMatchedZone.classList.add('hidden');
+    
+    if (elBtnPvpCancel) {
+        elBtnPvpCancel.style.display = '';
+        elBtnPvpCancel.textContent = '返回主選單';
     }
 }
 
-async function joinPvpQueue() {
-    // Clear any previous matchmaking timer
+function startPvpQueueFlow() {
+    const elSetupZone = document.getElementById('pvp-setup-zone');
+    const elQueueZone = document.getElementById('pvp-queue-zone');
+    const elRoomInput = document.getElementById('pvp-room-input');
+    
+    const roomCode = elRoomInput ? elRoomInput.value.trim() : '';
+    
+    if (elSetupZone) elSetupZone.classList.add('hidden');
+    if (elQueueZone) elQueueZone.classList.remove('hidden');
+    if (elBtnPvpCancel) elBtnPvpCancel.textContent = '取消尋找';
+    
+    if (elPvpTimerVal) elPvpTimerVal.textContent = '0';
+    if (elPvpStatusText) {
+        if (roomCode) {
+            elPvpStatusText.innerHTML = `正在加入房間 <span style="color: var(--gold); font-weight: bold;">${roomCode}</span> 備戰中...<br>等待好友加入中 <span id="pvp-timer-val" style="color: var(--gold); font-weight: bold;">0</span> 秒`;
+        } else {
+            elPvpStatusText.innerHTML = '正在召集各路群雄...<br>已等待 <span id="pvp-timer-val" style="color: var(--gold); font-weight: bold;">0</span> 秒';
+        }
+    }
+    
+    joinPvpQueue(roomCode);
+}
+
+async function joinPvpQueue(roomCode = '') {
     if (pvpTimerInterval) { clearInterval(pvpTimerInterval); pvpTimerInterval = null; }
+    
+    addLog(`📢 聯機模式。正在${roomCode ? '加入房號：' + roomCode : '搜尋對手'}，請同時布置陣容...`, 'system');
     
     try {
         const res = await fetch(`${API_BASE_URL}/api/pvp/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId: state.pvpPlayerId, team: [], username: state.username || '主公' })
+            body: JSON.stringify({ 
+                playerId: state.pvpPlayerId, 
+                team: [], 
+                username: state.username || '主公',
+                room: roomCode
+            })
         });
         if (!res.ok) throw new Error('Server error');
         const data = await res.json();
@@ -1720,7 +1759,6 @@ async function joinPvpQueue() {
         if (data.status === 'matched') {
             onPvpLobbyMatched(data.lobbyId);
         } else {
-            // Start polling for a match
             let waitTimer = 0;
             pvpTimerInterval = setInterval(async () => {
                 waitTimer++;
@@ -1728,7 +1766,7 @@ async function joinPvpQueue() {
                 if (timerValEl) timerValEl.textContent = waitTimer;
                 
                 try {
-                    const fallback = waitTimer >= 5;
+                    const fallback = roomCode ? false : (waitTimer >= 5);
                     const pollRes = await fetch(`${API_BASE_URL}/api/pvp/poll?playerId=${state.pvpPlayerId}&fallback=${fallback}`);
                     if (!pollRes.ok) return;
                     const pollData = await pollRes.json();
@@ -1752,14 +1790,52 @@ async function joinPvpQueue() {
 function onPvpLobbyMatched(lobbyId) {
     state.pvpLobbyId = lobbyId;
     
-    // Hide matchmaking spinner
-    if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+    if (elBtnPvpCancel) elBtnPvpCancel.style.display = 'none';
     
-    // Start lobby state polling
-    startPvpLobbyPoll();
+    const elQueueZone = document.getElementById('pvp-queue-zone');
+    const elMatchedZone = document.getElementById('pvp-matched-zone');
+    if (elQueueZone) elQueueZone.classList.add('hidden');
+    if (elMatchedZone) elMatchedZone.classList.remove('hidden');
     
-    addLog(`✅ 配對成功！大廳：${lobbyId.slice(-8)}。請在 30 秒備戰時間內完成布陣。`, 'victory');
-    updateUI();
+    const myNameEl = document.getElementById('pvp-match-my-name');
+    if (myNameEl) myNameEl.textContent = state.username || '我方主公';
+    
+    const oppNameEl = document.getElementById('pvp-match-opp-name');
+    if (oppNameEl) oppNameEl.textContent = '尋找中...';
+    
+    pollLobbyStateOnceForMatched();
+    
+    let countdown = 3;
+    const countdownValEl = document.getElementById('pvp-match-countdown-val');
+    if (countdownValEl) countdownValEl.textContent = countdown;
+    
+    const countdownTimer = setInterval(() => {
+        countdown--;
+        if (countdownValEl) countdownValEl.textContent = countdown;
+        if (countdown <= 0) {
+            clearInterval(countdownTimer);
+            if (elPvpOverlay) elPvpOverlay.classList.add('hidden');
+            startPvpLobbyPoll();
+            addLog(`✅ 配對成功！大廳：${lobbyId.slice(-8)}。請在 30 秒備戰時間內完成布陣。`, 'victory');
+            updateUI();
+        }
+    }, 1000);
+}
+
+async function pollLobbyStateOnceForMatched() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/pvp/poll?playerId=${state.pvpPlayerId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === 'in_lobby') {
+            const oppNameEl = document.getElementById('pvp-match-opp-name');
+            if (oppNameEl && data.oppUsername) {
+                oppNameEl.textContent = data.oppUsername;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to poll opponent name for matched screen:', e);
+    }
 }
 
 function startPvpLobbyPoll() {
@@ -1902,7 +1978,7 @@ function startPvpCombat(data) {
     const myTeam = state.deployedUnits.map(u => ({ templateId: u.templateId, star: u.star, skillLevel: u.skillLevel, x: u.x, y: u.y }));
     fetch(`${API_BASE_URL}/api/pvp/upload`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team: myTeam })
+        body: JSON.stringify({ team: myTeam, playerId: state.pvpPlayerId, username: state.username || '主公' })
     }).catch(e => console.warn('Failed to upload PvP team:', e));
     
     const pvpConfig = { isPvp: true, seed: data.seed, opponentUnits: data.opponent.team };

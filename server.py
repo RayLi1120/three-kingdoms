@@ -17,41 +17,79 @@ SHADOW_NAMES = [
 # default shadow database of player teams
 shadow_pool = [
     # Preset Team 1: Peach Garden trio
-    [
-        {"templateId": "liu_bei", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
-        {"templateId": "guan_yu", "star": 2, "skillLevel": 2, "x": 4, "y": 7},
-        {"templateId": "zhang_fei", "star": 2, "skillLevel": 2, "x": 2, "y": 6},
-        {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 3, "y": 6},
-        {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 4, "y": 6}
-    ],
+    {
+        "playerId": "preset",
+        "username": "劉玄德",
+        "team": [
+            {"templateId": "liu_bei", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
+            {"templateId": "guan_yu", "star": 2, "skillLevel": 2, "x": 4, "y": 7},
+            {"templateId": "zhang_fei", "star": 2, "skillLevel": 2, "x": 2, "y": 6},
+            {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 3, "y": 6},
+            {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 4, "y": 6}
+        ]
+    },
     # Preset Team 2: Wei Intellects
-    [
-        {"templateId": "cao_cao", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
-        {"templateId": "guo_jia", "star": 2, "skillLevel": 2, "x": 2, "y": 8},
-        {"templateId": "xun_yu", "star": 2, "skillLevel": 2, "x": 5, "y": 8},
-        {"templateId": "ballista_tower", "star": 1, "skillLevel": 1, "x": 1, "y": 8},
-        {"templateId": "ballista_tower", "star": 1, "skillLevel": 1, "x": 6, "y": 8}
-    ],
+    {
+        "playerId": "preset",
+        "username": "曹孟德",
+        "team": [
+            {"templateId": "cao_cao", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
+            {"templateId": "guo_jia", "star": 2, "skillLevel": 2, "x": 2, "y": 8},
+            {"templateId": "xun_yu", "star": 2, "skillLevel": 2, "x": 5, "y": 8},
+            {"templateId": "ballista_tower", "star": 1, "skillLevel": 1, "x": 1, "y": 8},
+            {"templateId": "ballista_tower", "star": 1, "skillLevel": 1, "x": 6, "y": 8}
+        ]
+    },
     # Preset Team 3: East Wu Commanders
-    [
-        {"templateId": "sun_quan", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
-        {"templateId": "zhou_yu", "star": 2, "skillLevel": 2, "x": 2, "y": 8},
-        {"templateId": "lu_xun", "star": 2, "skillLevel": 2, "x": 4, "y": 8},
-        {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 3, "y": 6}
-    ],
+    {
+        "playerId": "preset",
+        "username": "孫仲謀",
+        "team": [
+            {"templateId": "sun_quan", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
+            {"templateId": "zhou_yu", "star": 2, "skillLevel": 2, "x": 2, "y": 8},
+            {"templateId": "lu_xun", "star": 2, "skillLevel": 2, "x": 4, "y": 8},
+            {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 3, "y": 6}
+        ]
+    },
     # Preset Team 4: Yellow Turban
-    [
-        {"templateId": "zhang_jiao", "star": 2, "skillLevel": 2, "x": 3, "y": 8},
-        {"templateId": "yuan_shao", "star": 2, "skillLevel": 2, "x": 2, "y": 7},
-        {"templateId": "yuan_shu", "star": 2, "skillLevel": 2, "x": 5, "y": 7}
-    ],
+    {
+        "playerId": "preset",
+        "username": "張角",
+        "team": [
+            {"templateId": "zhang_jiao", "star": 2, "skillLevel": 2, "x": 3, "y": 8},
+            {"templateId": "yuan_shao", "star": 2, "skillLevel": 2, "x": 2, "y": 7},
+            {"templateId": "yuan_shu", "star": 2, "skillLevel": 2, "x": 5, "y": 7}
+        ]
+    },
     # Preset Team 5: Hero Beauty
-    [
-        {"templateId": "lu_bu", "star": 2, "skillLevel": 2, "x": 3, "y": 6},
-        {"templateId": "diao_chan", "star": 2, "skillLevel": 2, "x": 3, "y": 8},
-        {"templateId": "zhao_yun", "star": 2, "skillLevel": 2, "x": 4, "y": 7}
-    ]
+    {
+        "playerId": "preset",
+        "username": "呂奉先",
+        "team": [
+            {"templateId": "lu_bu", "star": 2, "skillLevel": 2, "x": 3, "y": 6},
+            {"templateId": "diao_chan", "star": 2, "skillLevel": 2, "x": 3, "y": 8},
+            {"templateId": "zhao_yun", "star": 2, "skillLevel": 2, "x": 4, "y": 7}
+        ]
+    }
 ]
+
+def get_random_shadow_team(player_id):
+    valid_entries = []
+    for entry in shadow_pool:
+        if isinstance(entry, dict):
+            if entry.get("playerId") != player_id:
+                valid_entries.append(entry)
+        else:
+            valid_entries.append({"team": entry, "username": random.choice(SHADOW_NAMES)})
+            
+    if not valid_entries:
+        valid_entries = [entry for entry in shadow_pool if isinstance(entry, dict) and entry.get("playerId") == "preset"]
+        
+    chosen = random.choice(valid_entries)
+    if isinstance(chosen, dict):
+        return chosen.get("team"), chosen.get("username", random.choice(SHADOW_NAMES))
+    else:
+        return chosen, random.choice(SHADOW_NAMES)
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -73,32 +111,36 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             # If not in a lobby yet, check if we should trigger fallback
             if player_id not in player_lobbies:
                 if fallback and player_id in pvp_queue:
-                    # Create a shadow lobby
-                    lobby_id = f"lobby_shadow_{random.randint(1000, 9999)}_{int(time.time())}"
-                    opp_team = random.choice(shadow_pool)
-                    opp_id = f"shadow_{random.randint(100, 999)}"
-                    opp_username = random.choice(SHADOW_NAMES)
-                    
-                    pvp_lobbies[lobby_id] = {
-                        "players": {
-                            player_id: { "team": pvp_queue[player_id]["team"], "username": pvp_queue[player_id].get("username", "主公"), "ready": False, "reported_result": None, "points": 0 },
-                            opp_id: { "team": opp_team, "username": opp_username, "ready": True, "reported_result": None, "points": 0 }
-                        },
-                        "current_round": 1,
-                        "prep_start_time": time.time(),
-                        "status": "prep",
-                        "combat_seed": random.randint(1, 100000),
-                        "is_shadow": True
-                    }
-                    
-                    player_lobbies[player_id] = lobby_id
-                    del pvp_queue[player_id]
-                    
-                    self.send_json_response(200, {
-                        'status': 'matched',
-                        'lobbyId': lobby_id
-                    })
-                    return
+                    q_entry = pvp_queue[player_id]
+                    if not q_entry.get("room", ""):
+                        # Create a shadow lobby
+                        lobby_id = f"lobby_shadow_{random.randint(1000, 9999)}_{int(time.time())}"
+                        opp_team, opp_username = get_random_shadow_team(player_id)
+                        opp_id = f"shadow_{random.randint(100, 999)}"
+                        
+                        pvp_lobbies[lobby_id] = {
+                            "players": {
+                                player_id: { "team": pvp_queue[player_id]["team"], "username": pvp_queue[player_id].get("username", "主公"), "ready": False, "reported_result": None, "points": 0 },
+                                opp_id: { "team": opp_team, "username": opp_username, "ready": True, "reported_result": None, "points": 0 }
+                            },
+                            "current_round": 1,
+                            "prep_start_time": time.time(),
+                            "status": "prep",
+                            "combat_seed": random.randint(1, 100000),
+                            "is_shadow": True
+                        }
+                        
+                        player_lobbies[player_id] = lobby_id
+                        del pvp_queue[player_id]
+                        
+                        self.send_json_response(200, {
+                            'status': 'matched',
+                            'lobbyId': lobby_id
+                        })
+                        return
+                    else:
+                        self.send_json_response(200, {'status': 'waiting'})
+                        return
                 else:
                     self.send_json_response(200, {'status': 'waiting'})
                     return
@@ -168,11 +210,25 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             player_id = data.get('playerId')
             team = data.get('team', [])
             username = data.get('username', '主公')[:12]  # cap at 12 chars
+            room = data.get('room', '').strip()  # lobby room code
             
             if not player_id:
                 self.send_json_response(400, {'error': 'Missing playerId'})
                 return
                 
+            # Clean up old game_over lobbies for this player first
+            if player_id in player_lobbies:
+                lobby_id = player_lobbies[player_id]
+                if lobby_id in pvp_lobbies:
+                    lobby = pvp_lobbies[lobby_id]
+                    if lobby.get("status") == "game_over":
+                        del pvp_lobbies[lobby_id]
+                        for p_id, l_id in list(player_lobbies.items()):
+                            if l_id == lobby_id:
+                                del player_lobbies[p_id]
+                else:
+                    del player_lobbies[player_id]
+
             # Check if player is already in an active lobby
             if player_id in player_lobbies:
                 lobby_id = player_lobbies[player_id]
@@ -182,12 +238,13 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
                 
-            # Look for another queuing player to pair
+            # Look for another queuing player to pair with the same room code
             matched_player_id = None
-            for q_id in list(pvp_queue.keys()):
+            for q_id, q_info in list(pvp_queue.items()):
                 if q_id != player_id:
-                    matched_player_id = q_id
-                    break
+                    if q_info.get("room", "") == room:
+                        matched_player_id = q_id
+                        break
                     
             if matched_player_id:
                 # Match found! Create a synchronized PvP lobby
@@ -220,10 +277,11 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                     'lobbyId': lobby_id
                 })
             else:
-                # No match found, join queue
+                # No match found, join queue with room code
                 pvp_queue[player_id] = {
                     "team": team,
                     "username": username,
+                    "room": room,
                     "joined_at": time.time()
                 }
                 self.send_json_response(200, {'status': 'waiting'})
@@ -308,7 +366,9 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                     # If it's a shadow lobby, update the shadow opponent's team for the next round
                     if lobby["is_shadow"]:
                         opp_id = next(p for p in lobby["players"] if p != player_id)
-                        lobby["players"][opp_id]["team"] = random.choice(shadow_pool)
+                        opp_team, opp_username = get_random_shadow_team(player_id)
+                        lobby["players"][opp_id]["team"] = opp_team
+                        lobby["players"][opp_id]["username"] = opp_username
                         lobby["players"][opp_id]["ready"] = True
                         
             self.send_json_response(200, {"status": "ok"})
@@ -328,8 +388,14 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             
         elif path == '/api/pvp/upload':
             team = data.get('team', [])
+            p_id = data.get('playerId', None)
+            username = data.get('username', '未知主公')
             if team and len(team) > 0:
-                shadow_pool.append(team)
+                shadow_pool.append({
+                    "playerId": p_id,
+                    "username": username,
+                    "team": team
+                })
                 # Keep pool size reasonable
                 if len(shadow_pool) > 50:
                     shadow_pool.pop(5) # Remove older custom entries
