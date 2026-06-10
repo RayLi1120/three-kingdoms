@@ -32,15 +32,7 @@ export const UNIT_TEMPLATES = {
             dmgMult: 2.0,
             healMult: 1.0
         },
-        extraSkillName: '神機妙算',
-        extraSkillDesc: '指揮：敵軍試圖發動主動戰法時，有35%幾率使其計窮（無法施法）2秒，並造成150%智力謀略傷害。',
-        extraSkillConfig: {
-            type: 'command_silence',
-            chance: 0.35,
-            dmgMult: 1.5,
-            durationSec: 2
-        }
-    },
+},
     
     zhang_fei: {
         id: 'zhang_fei',
@@ -69,15 +61,7 @@ export const UNIT_TEMPLATES = {
             shieldMult: 3.0,
             durationSec: 4
         },
-        extraSkillName: '剛勇無前',
-        extraSkillDesc: '被動：每次受到傷害時，使下一次攻擊/戰法傷害提升20%，並降低攻擊者25%防禦（統率），持續3秒。',
-        extraSkillConfig: {
-            type: 'passive_counter',
-            dmgBuff: 0.20,
-            defShred: 0.25,
-            durationSec: 3
-        }
-    },
+},
     
     cao_cao: {
         id: 'cao_cao',
@@ -105,14 +89,7 @@ export const UNIT_TEMPLATES = {
             summonId: 'danyang_soldier',
             summonCount: 2
         },
-        extraSkillName: '亂世奸雄',
-        extraSkillDesc: '指揮：使所有友軍造成的傷害提升12%，並使曹操自身受到的傷害降低15%。',
-        extraSkillConfig: {
-            type: 'command_aura',
-            alliesDmgBuff: 0.12,
-            selfDmgReduc: 0.15
-        }
-    },
+},
     
     zhao_yun: {
         id: 'zhao_yun',
@@ -140,14 +117,7 @@ export const UNIT_TEMPLATES = {
             tauntDmgReduction: 0.50,
             durationSec: 5
         },
-        extraSkillName: '一身是膽',
-        extraSkillDesc: '被動：戰鬥中自身獲得洞察狀態（免疫所有控制效果），並提升25點武力和25點統率。',
-        extraSkillConfig: {
-            type: 'passive_cc_immunity',
-            wuliBuff: 25,
-            tongshuaiBuff: 25
-        }
-    },
+},
 
     // --- NEW HEROES ---
     liu_bei: {
@@ -176,16 +146,7 @@ export const UNIT_TEMPLATES = {
             dmgReduc: 0.25,
             durationSec: 4
         },
-        extraSkillName: '攜手禦敵',
-        extraSkillDesc: '指揮：每3秒治療生命值最低的友軍（80%智力），並有15%幾率使隨機敵軍繳械（無法普攻）2秒。',
-        extraSkillConfig: {
-            type: 'command_heal_disarm',
-            healMult: 0.8,
-            disarmChance: 0.15,
-            disarmDurationSec: 2,
-            intervalSec: 3
-        }
-    },
+},
 
     guan_yu: {
         id: 'guan_yu',
@@ -212,15 +173,7 @@ export const UNIT_TEMPLATES = {
             dmgMult: 2.2,
             stunDurationSec: 2
         },
-        extraSkillName: '千裡走單騎',
-        extraSkillDesc: '被動：普通攻擊時，有30%幾率獲得1層抵禦（免疫下一次傷害），並提升自身20%武力，持續3秒。',
-        extraSkillConfig: {
-            type: 'passive_resist_wuli',
-            chance: 0.30,
-            wuliBuff: 0.20,
-            durationSec: 3
-        }
-    },
+},
 
     jiang_wei: {
         id: 'jiang_wei',
@@ -247,14 +200,7 @@ export const UNIT_TEMPLATES = {
             debuffPct: 0.20,
             durationSec: 4
         },
-        extraSkillName: '文武雙全',
-        extraSkillDesc: '被動：自身每次造成傷害時，提升3%武力與智力，最多疊加5層。',
-        extraSkillConfig: {
-            type: 'passive_ramp_stats',
-            buffPerStack: 0.03,
-            maxStacks: 5
-        }
-    },
+},
 
     ma_chao: {
         id: 'ma_chao',
@@ -281,16 +227,7 @@ export const UNIT_TEMPLATES = {
             splashPct: 0.60,
             durationSec: 5
         },
-        extraSkillName: '一騎當千',
-        extraSkillDesc: '突擊（35%）：普通攻擊後，對目標及周圍2格範圍內的所有敵人造成100%武力的物理傷害。',
-        extraSkillConfig: {
-            type: 'assault',
-            chance: 0.35,
-            dmgMult: 1.0,
-            dmgType: 'physical',
-            radius: 2
-        }
-    },
+},
 
     pang_tong: {
         id: 'pang_tong',
@@ -317,16 +254,7 @@ export const UNIT_TEMPLATES = {
             sharePct: 0.30,
             durationSec: 6
         },
-        extraSkillName: '士別三日',
-        extraSkillDesc: '被動：戰鬥開始的前4秒內無法進行普通攻擊（繳械），但獲得40%規避（閃避）率；戰鬥第5秒時，對所有敵軍造成300%智力謀略傷害。',
-        extraSkillConfig: {
-            type: 'passive_shibie',
-            disarmDurationSec: 4,
-            dodgeBuff: 0.40,
-            explodeTime: 5,
-            explodeDmgMult: 3.0
-        }
-    },
+},
 
     guo_jia: {
         id: 'guo_jia',
@@ -353,14 +281,7 @@ export const UNIT_TEMPLATES = {
             atkSpeedBuff: 0.50,
             durationSec: 5
         },
-        extraSkillName: '十勝遺計',
-        extraSkillDesc: '指揮：戰鬥前6秒，使我軍武力最高的單體獲得30%倒戈（吸血）和洞察（免疫控制）狀態。',
-        extraSkillConfig: {
-            type: 'command_shield_cc_immunity',
-            durationSec: 6,
-            lifestealPct: 0.30
-        }
-    },
+},
 
     xun_yu: {
         id: 'xun_yu',
@@ -386,14 +307,7 @@ export const UNIT_TEMPLATES = {
             maxHPDmgPct: 0.10,
             durationSec: 5
         },
-        extraSkillName: '王佐之才',
-        extraSkillDesc: '指揮：使相鄰友軍的防禦（統率）提升20%，且友軍受到暴擊時為其恢復80%智力的生命值。',
-        extraSkillConfig: {
-            type: 'command_defense_aura',
-            defBuffPct: 0.20,
-            healMult: 0.8
-        }
-    },
+},
 
     jia_xu: {
         id: 'jia_xu',
@@ -421,15 +335,7 @@ export const UNIT_TEMPLATES = {
             healMult: 1.2,
             dmgMult: 2.2
         },
-        extraSkillName: '暫避其鋒',
-        extraSkillDesc: '指揮：戰鬥開始前5秒，使己方智力最高單體獲得40%物理免傷，武力最高單體獲得40%魔法免傷。',
-        extraSkillConfig: {
-            type: 'command_zanbi',
-            durationSec: 5,
-            physReduc: 0.40,
-            magicReduc: 0.40
-        }
-    },
+},
 
     cheng_yu: {
         id: 'cheng_yu',
@@ -456,16 +362,7 @@ export const UNIT_TEMPLATES = {
             dotMult: 0.40,
             durationSec: 4
         },
-        extraSkillName: '四面楚歌',
-        extraSkillDesc: '指揮：每5秒隨機使2名敵軍中毒，每秒造成30%智力謀略傷害，持續3秒。',
-        extraSkillConfig: {
-            type: 'command_poison',
-            intervalSec: 5,
-            targetCount: 2,
-            dotMult: 0.30,
-            durationSec: 3
-        }
-    },
+},
 
     sun_quan: {
         id: 'sun_quan',
@@ -491,16 +388,7 @@ export const UNIT_TEMPLATES = {
             buffPct: 0.30,
             durationSec: 6
         },
-        extraSkillName: '兵無常勢',
-        extraSkillDesc: '突擊（35%）：普通攻擊後，對目標造成180%智力謀略傷害，並恢復傷害量100%的生命值。',
-        extraSkillConfig: {
-            type: 'assault',
-            chance: 0.35,
-            dmgMult: 1.8,
-            dmgType: 'magic',
-            lifestealMult: 1.0
-        }
-    },
+},
 
     zhou_yu: {
         id: 'zhou_yu',
@@ -527,15 +415,7 @@ export const UNIT_TEMPLATES = {
             burnMult: 0.20,
             durationSec: 5
         },
-        extraSkillName: '奪魂挾魄',
-        extraSkillDesc: '被動：每次成功發動戰法時，有60%幾率奪取目標15%的武力、智力和統率屬性，持續4秒。',
-        extraSkillConfig: {
-            type: 'passive_stat_steal',
-            chance: 0.60,
-            stealPct: 0.15,
-            durationSec: 4
-        }
-    },
+},
 
     lu_xun: {
         id: 'lu_xun',
@@ -561,17 +441,7 @@ export const UNIT_TEMPLATES = {
             targetDmgMult: 3.0,
             splashDmgMult: 1.5
         },
-        extraSkillName: '克敵制勝',
-        extraSkillDesc: '突擊（30%）：普通攻擊後，對目標造成180%智力謀略傷害。若目標處於灼燒狀態，則有40%幾率使其震懾1.5秒。',
-        extraSkillConfig: {
-            type: 'assault',
-            chance: 0.30,
-            dmgMult: 1.8,
-            dmgType: 'magic',
-            stunChance: 0.40,
-            stunDurationSec: 1.5
-        }
-    },
+},
 
     lu_su: {
         id: 'lu_su',
@@ -598,14 +468,7 @@ export const UNIT_TEMPLATES = {
             transferPct: 0.30,
             durationSec: 5
         },
-        extraSkillName: '八門金鎖陣',
-        extraSkillDesc: '指揮：戰鬥開始前5秒，降低敵軍武力最高的2人35%造成的傷害。',
-        extraSkillConfig: {
-            type: 'command_bamen',
-            durationSec: 5,
-            dmgDealtReduc: 0.35
-        }
-    },
+},
 
     sun_shangxiang: {
         id: 'sun_shangxiang',
@@ -632,15 +495,7 @@ export const UNIT_TEMPLATES = {
             bonusDmgPerBuff: 0.20,
             healMult: 1.0
         },
-        extraSkillName: '強攻',
-        extraSkillDesc: '突擊（35%）：普通攻擊後，使自身獲得連擊狀態（每次普攻發動兩次攻擊），持續3秒。',
-        extraSkillConfig: {
-            type: 'assault',
-            chance: 0.35,
-            buffType: 'double_attack',
-            durationSec: 3
-        }
-    },
+},
 
     tai_shici: {
         id: 'tai_shici',
@@ -667,15 +522,7 @@ export const UNIT_TEMPLATES = {
             maxStacks: 5,
             durationSec: 5
         },
-        extraSkillName: '折衝禦侮',
-        extraSkillDesc: '突擊（35%）：普通攻擊後，降低目標20%智力與統率，持續3秒，並使我軍防禦（統率）最低的友軍獲得格擋狀態，持續3秒。',
-        extraSkillConfig: {
-            type: 'assault',
-            chance: 0.35,
-            debuffPct: 0.20,
-            shieldDurationSec: 3
-        }
-    },
+},
 
     zhang_jiao: {
         id: 'zhang_jiao',
@@ -703,14 +550,7 @@ export const UNIT_TEMPLATES = {
             stunChance: 0.30,
             stunDurationSec: 1.5
         },
-        extraSkillName: '太平道法',
-        extraSkillDesc: '被動：自身主動戰法發動時的能量恢復速度提升25%，且主動戰法獲得20%奇謀（法術暴擊）幾率。',
-        extraSkillConfig: {
-            type: 'passive_energy_crit',
-            energySpeedBuff: 0.25,
-            critChance: 0.20
-        }
-    },
+},
 
     yuan_shao: {
         id: 'yuan_shao',
@@ -737,15 +577,7 @@ export const UNIT_TEMPLATES = {
             defBuffPct: 0.40,
             durationSec: 5
         },
-        extraSkillName: '鋒矢陣',
-        extraSkillDesc: '陣法：戰鬥中使我軍前排中路單體提升25%攻擊速度，但受到的傷害增加15%；我軍後排群體受到的傷害降低15%。',
-        extraSkillConfig: {
-            type: 'formation_fengshi',
-            frontlineAtkSpeedBuff: 0.25,
-            frontlineDmgTakeDebuff: 0.15,
-            backlineDmgTakeBuff: 0.15
-        }
-    },
+},
 
     yuan_shu: {
         id: 'yuan_shu',
@@ -772,15 +604,7 @@ export const UNIT_TEMPLATES = {
             hpDrainPct: 0.12,
             durationSec: 5
         },
-        extraSkillName: '手起刀落',
-        extraSkillDesc: '突擊（35%）：普通攻擊後，對目標造成200%武力物理傷害。',
-        extraSkillConfig: {
-            type: 'assault',
-            chance: 0.35,
-            dmgMult: 2.0,
-            dmgType: 'physical'
-        }
-    },
+},
 
     sima_yi: {
         id: 'sima_yi',
@@ -807,16 +631,7 @@ export const UNIT_TEMPLATES = {
             lifestealMult: 0.60,
             statBoostPerDeath: 0.10
         },
-        extraSkillName: '用武通神',
-        extraSkillDesc: '被動：戰鬥開始後，每4秒對隨機敵軍2人造成謀略傷害（傷害率依次為100%、150%、200%、250%，受智力影響）。',
-        extraSkillConfig: {
-            type: 'passive_ramp_dot',
-            intervalSec: 4,
-            baseDmgMult: 1.0,
-            dmgMultIncrement: 0.50,
-            targetCount: 2
-        }
-    },
+},
 
     lu_bu: {
         id: 'lu_bu',
@@ -844,16 +659,7 @@ export const UNIT_TEMPLATES = {
             splashDmgMult: 1.2,
             durationSec: 5
         },
-        extraSkillName: '百騎劫營',
-        extraSkillDesc: '突擊（30%）：普通攻擊後，對目標造成160%武力物理傷害，並對敵軍兵力最低的單體濺射50%的傷害。',
-        extraSkillConfig: {
-            type: 'assault',
-            chance: 0.30,
-            dmgMult: 1.6,
-            dmgType: 'physical',
-            splashPct: 0.50
-        }
-    },
+},
 
     diao_chan: {
         id: 'diao_chan',
@@ -879,18 +685,7 @@ export const UNIT_TEMPLATES = {
             charmDurationSec: 3.0,
             statTransferPct: 0.50
         },
-        extraSkillName: '傾國傾城',
-        extraSkillDesc: '指揮：戰鬥開始時，使隨機2名敵軍每4秒有30%幾率陷入混亂（攻擊其友軍），持續2秒。',
-        extraSkillConfig: {
-            type: 'command_confusion',
-            targetCount: 2,
-            chance: 0.30,
-            durationSec: 2,
-            intervalSec: 4
-        }
-    },
-
-
+},
 
     // ==========================================
     // SUMMONS
@@ -1038,6 +833,12 @@ export const UNIT_TEMPLATES = {
 };
 
 export const FATE_TEMPLATES = {
+    royal_marriage: {
+        id: 'royal_marriage',
+        name: '梟雄聯姻',
+        requiredIds: ['liu_bei', 'sun_shangxiang'],
+        desc: '兩人均獲得+20%最大生命值與+20%武力。當孫尚香獲得劉備治療時獲得100%治療量等額護盾；孫尚香普通攻擊時劉備額外恢復5點能量。'
+    },
     peach_garden: {
         id: 'peach_garden',
         name: '桃園三結義',
@@ -1113,3 +914,243 @@ export function getStatsForStar(template, star = 1) {
         range: template.range
     };
 }
+
+export const SKILL_TEMPLATES = {
+    shangbing_famou: {
+        id: 'shangbing_famou',
+        name: '上兵伐謀',
+        cost: 5,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [120, 150, 180][lvl - 1] || 120;
+            return `滿能量施放時有 40% 幾率發動：分別對敵方智力最低、兵力最低、統率最低、武力最高 的單位造成 4 次 ${val}% 智力的謀略傷害。`;
+        }
+    },
+    luli_tongxin: {
+        id: 'luli_tongxin',
+        name: '勠力同心',
+        cost: 5,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [60, 85, 110][lvl - 1] || 60;
+            const ts = [20, 30, 40][lvl - 1] || 20;
+            return `滿能量施放時發動：隨機執行 1-4 次，為己方受傷單體進行治療（${val}% 智力），並提升其 ${ts} 點統率（受智力影響加成），持續 3 秒。`;
+        }
+    },
+    jiqi_duogui: {
+        id: 'jiqi_duogui',
+        name: '擊其惰歸',
+        cost: 5,
+        type: 'passive',
+        desc: (lvl) => {
+            const val = [215, 265, 315][lvl - 1] || 215;
+            return `能量滿時獲得「蓄威」。\n1. 防守：若受單次傷害大於最大生命 40% 且有蓄威時，消耗蓄威獲得 100% 規避 2 秒並恢復 20% 最大生命（受武力加成）。\n2. 進攻：若 6 秒內未觸發防守，則對敵方全體造成 ${val}% 武力物理傷害。`;
+        }
+    },
+    shengqi_lingdi: {
+        id: 'shengqi_lingdi',
+        name: '盛氣凌敵',
+        cost: 4,
+        type: 'command',
+        desc: (lvl) => {
+            const val = [35, 45, 55][lvl - 1] || 35;
+            return `戰鬥開始時，有 ${val}% 幾率使隨機 2 名敵軍繳械（無法普攻），持續 3 秒。`;
+        }
+    },
+    duohun_xiepo: {
+        id: 'duohun_xiepo',
+        name: '奪魂挾魄',
+        cost: 4,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [15, 19, 23][lvl - 1] || 15;
+            return `每 5.5 秒施放：偷取目標 ${val}% 武力、智力與統率加持給自身，持續 4 秒。`;
+        }
+    },
+    beishe_guiche: {
+        id: 'beishe_guiche',
+        name: '杯蛇鬼車',
+        cost: 4,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [120, 150, 180][lvl - 1] || 120;
+            const heal = [60, 80, 100][lvl - 1] || 60;
+            return `滿能量施放：對 3x3 範圍敵軍造成 ${val}% 智力謀略傷害，並為 2 名最虛弱盟友恢復 ${heal}% 智力兵力。`;
+        }
+    },
+    bamen_jinsuo: {
+        id: 'bamen_jinsuo',
+        name: '八門金鎖陣',
+        cost: 4,
+        type: 'command',
+        desc: (lvl) => {
+            const val = [25, 35, 45][lvl - 1] || 25;
+            return `戰鬥開始時，降低敵方武力最高 2 人 ${val}% 造成傷害，持續 5 秒。`;
+        }
+    },
+    zanbi_qifeng: {
+        id: 'zanbi_qifeng',
+        name: '暫避其鋒',
+        cost: 4,
+        type: 'command',
+        desc: (lvl) => {
+            const val = [30, 40, 50][lvl - 1] || 30;
+            return `戰前使我軍智力最高者獲得 ${val}% 物理免傷，武力最高者獲得 ${val}% 謀略免傷，持續 5 秒。`;
+        }
+    },
+    pozhen_cuijian: {
+        id: 'pozhen_cuijian',
+        name: '破陣摧堅',
+        cost: 4,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [140, 180, 220][lvl - 1] || 140;
+            const debuff = [20, 25, 30][lvl - 1] || 20;
+            return `滿能量施放：對目標造成 ${val}% 武力傷害，並降低其 ${debuff}% 統率與智力，持續 4 秒。`;
+        }
+    },
+    suoxiang_pimi: {
+        id: 'suoxiang_pimi',
+        name: '所向披靡',
+        cost: 4,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [180, 230, 280][lvl - 1] || 180;
+            return `滿能量施放：蓄力 1 秒後，對敵方全體造成 ${val}% 武力物理傷害。`;
+        }
+    },
+    qianggong: {
+        id: 'qianggong',
+        name: '強攻',
+        cost: 3,
+        type: 'assault',
+        desc: (lvl) => {
+            const val = [2, 3, 4][lvl - 1] || 2;
+            return `普攻後 35% 幾率觸發：自身獲得連擊狀態（每次普攻雙擊），持續 ${val} 秒。`;
+        }
+    },
+    shouqi_daoluo: {
+        id: 'shouqi_daoluo',
+        name: '手起刀落',
+        cost: 3,
+        type: 'assault',
+        desc: (lvl) => {
+            const val = [100, 130, 160][lvl - 1] || 100;
+            return `普攻後 30% 幾率觸發：對目標額外造成 ${val}% 武力物理傷害。`;
+        }
+    },
+    bishi_jixu: {
+        id: 'bishi_jixu',
+        name: '避實擊虛',
+        cost: 3,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [150, 190, 230][lvl - 1] || 150;
+            return `滿能量施放：對敵軍統率最低單體造成 ${val}% 武力物理傷害。`;
+        }
+    },
+    luofeng: {
+        id: 'luofeng',
+        name: '落鳳',
+        cost: 3,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [140, 180, 220][lvl - 1] || 140;
+            const dur = [1.5, 2.0, 2.5][lvl - 1] || 1.5;
+            return `滿能量施放：對目標造成 ${val}% 武力傷害，並使其計窮（無法施放主動戰法） ${dur} 秒。`;
+        }
+    },
+    zuoshou_gucheng: {
+        id: 'zuoshou_gucheng',
+        name: '坐守孤城',
+        cost: 3,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [90, 120, 150][lvl - 1] || 90;
+            return `滿能量施放：為己方兵力最低的 2 名盟友恢復 ${val}% 智力生命值。`;
+        }
+    },
+    yudi_pingzhang: {
+        id: 'yudi_pingzhang',
+        name: '禦敵屏障',
+        cost: 3,
+        type: 'command',
+        desc: (lvl) => {
+            const val = [15, 20, 25][lvl - 1] || 15;
+            return `戰前使己方隨機 2 人獲得 ${val}% 傷害減免，持續 5 秒。`;
+        }
+    },
+    zongbing_jielue: {
+        id: 'zongbing_jielue',
+        name: '縱兵劫掠',
+        cost: 3,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [130, 160, 200][lvl - 1] || 130;
+            const dur = [1.0, 1.5, 2.0][lvl - 1] || 1.0;
+            return `滿能量施放：對目標造成 ${val}% 武力傷害，並使其震懾（眩暈無法行動） ${dur} 秒。`;
+        }
+    },
+    baozha: {
+        id: 'baozha',
+        name: '包紮',
+        cost: 2,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [100, 130, 160][lvl - 1] || 100;
+            return `滿能量施放：為自身或最近盟友恢復 ${val}% 智力生命值。`;
+        }
+    },
+    huikan: {
+        id: 'huikan',
+        name: '揮砍',
+        cost: 2,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [100, 130, 160][lvl - 1] || 100;
+            return `滿能量施放：對最近敵軍造成 ${val}% 武力物理傷害。`;
+        }
+    },
+    huogong: {
+        id: 'huogong',
+        name: '火攻',
+        cost: 2,
+        type: 'active',
+        desc: (lvl) => {
+            const val = [80, 110, 140][lvl - 1] || 80;
+            const burn = [15, 20, 25][lvl - 1] || 15;
+            return `滿能量施放：對最近敵軍造成 ${val}% 智力謀略傷害，並附加灼燒（每秒 ${burn}% 智力傷害，持續 3 秒）。`;
+        }
+    },
+    jiuyuan: {
+        id: 'jiuyuan',
+        name: '救援',
+        cost: 2,
+        type: 'passive',
+        desc: (lvl) => {
+            const chance = [30, 40, 50][lvl - 1] || 30;
+            const val = [30, 40, 50][lvl - 1] || 30;
+            return `受到傷害時，有 ${chance}% 幾率為自身恢復 ${val}% 智力生命值。`;
+        }
+    },
+    fentu: {
+        id: 'fentu',
+        name: '奮突',
+        cost: 2,
+        type: 'passive',
+        desc: (lvl) => {
+            const val = [6, 8, 10][lvl - 1] || 6;
+            return `每次普攻後，提升自身 ${val}% 物理傷害量，最多疊加 3 次。`;
+        }
+    },
+    chuanci: {
+        id: 'chuanci',
+        name: '穿刺',
+        cost: 1,
+        type: 'passive',
+        desc: (lvl) => {
+            const val = [10, 15, 20][lvl - 1] || 10;
+            return `普通攻擊時，無視目標 ${val}% 的統率防禦。`;
+        }
+    }
+};

@@ -1,4 +1,4 @@
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js?v=17';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=18';
 
 // Local references to game state and callbacks to avoid circular imports
 let logCallback = null;
@@ -390,6 +390,10 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 stats.hpMax = Math.round(stats.hpMax * 1.25);
             }
         }
+        if (activeFates.includes('royal_marriage') && ['liu_bei', 'sun_shangxiang'].includes(u.templateId)) {
+            stats.hpMax = Math.round(stats.hpMax * 1.20);
+            stats.wuli = Math.round(stats.wuli * 1.20);
+        }
         if (activeFates.includes('five_tigers') && ['guan_yu', 'zhang_fei', 'zhao_yun', 'ma_chao'].includes(u.templateId)) {
             stats.wuli = Math.round(stats.wuli * 1.20);
             stats.atkSpeed = stats.atkSpeed * 1.20;
@@ -431,7 +435,8 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             lastAttackTime: 0,
             tauntTarget: null,
             statusEffects: [],
-            boardReference: u // Keep reference to update building HP later
+            boardReference: u, // Keep reference to update building HP later
+            equippedSkill: u.equippedSkill || null
         });
     });
 
@@ -525,6 +530,10 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                     stats.hpMax = Math.round(stats.hpMax * 1.25);
                 }
             }
+            if (oppActiveFates.includes('royal_marriage') && ['liu_bei', 'sun_shangxiang'].includes(u.templateId)) {
+                stats.hpMax = Math.round(stats.hpMax * 1.20);
+                stats.wuli = Math.round(stats.wuli * 1.20);
+            }
             if (oppActiveFates.includes('five_tigers') && ['guan_yu', 'zhang_fei', 'zhao_yun', 'ma_chao'].includes(u.templateId)) {
                 stats.wuli = Math.round(stats.wuli * 1.20);
                 stats.atkSpeed = stats.atkSpeed * 1.20;
@@ -570,7 +579,8 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 lastAttackTime: 0,
                 tauntTarget: null,
                 statusEffects: [],
-                boardReference: null
+                boardReference: null,
+                equippedSkill: u.equippedSkill || null
             });
         });
     } else {
@@ -672,50 +682,70 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
 
 
 
-    // Apply 暫避其鋒 (Zanbi Qifeng) Command buff
-    ['player', 'enemy'].forEach(teamName => {
-        const jiaXu = activeUnits.find(u => u.team === teamName && u.templateId === 'jia_xu');
-        if (jiaXu) {
-            let highestZhiliUnit = null;
-            let highestWuliUnit = null;
-            let maxZhili = -1;
-            let maxWuli = -1;
-            activeUnits.forEach(other => {
-                if (other.team === teamName && !other.isBuilding && !other.isDead) {
-                    if (other.stats.zhili > maxZhili) {
-                        maxZhili = other.stats.zhili;
-                        highestZhiliUnit = other;
-                    }
-                    if (other.stats.wuli > maxWuli) {
-                        maxWuli = other.stats.wuli;
-                        highestWuliUnit = other;
-                    }
-                }
-            });
-            if (highestZhiliUnit) {
-                applyStatusEffect(highestZhiliUnit, 'zanbi_phys_reduc', 0.40, 5000);
-                createFloatingNumber(highestZhiliUnit, '暫避其鋒', 'shield');
-                addLog(`🛡️ ${teamName === 'player' ? '己方' : '敵方'}賈詡發動 [暫避其鋒]！賦予 ${highestZhiliUnit.name} 40% 物理免傷，持續 5 秒！`, 'skill');
-            }
-            if (highestWuliUnit) {
-                applyStatusEffect(highestWuliUnit, 'zanbi_magic_reduc', 0.40, 5000);
-                createFloatingNumber(highestWuliUnit, '暫避其鋒', 'shield');
-                addLog(`🛡️ ${teamName === 'player' ? '己方' : '敵方'}賈詡發動 [暫避其鋒]！賦予 ${highestWuliUnit.name} 40% 魔法免傷，持續 5 秒！`, 'skill');
+    // Helper to get random sub-array
+    const getRandomTargets = (arr, count) => {
+        const arrCopy = [...arr];
+        const results = [];
+        const limit = Math.min(arr.length, count);
+        for (let i = 0; i < limit; i++) {
+            const idx = Math.floor(Math.random() * arrCopy.length);
+            results.push(arrCopy.splice(idx, 1)[0]);
+        }
+        return results;
+    };
+
+    // Apply Command and Passive combat-start hooks
+    activeUnits.forEach(unit => {
+        if (unit.isDead || !unit.equippedSkill) return;
+        const skill = unit.equippedSkill;
+        const level = skill.level || 1;
+        const team = unit.team;
+        const enemies = activeUnits.filter(u => u.team !== team && !u.isDead && !u.isBuilding);
+        const allies = activeUnits.filter(u => u.team === team && !u.isDead && !u.isBuilding);
+        
+        if (skill.id === 'shengqi_lingdi') {
+            const chance = [0.35, 0.45, 0.55][level - 1] || 0.35;
+            if (Math.random() < chance) {
+                const targets = getRandomTargets(enemies, 2);
+                targets.forEach(target => {
+                    applyStatusEffect(target, 'disarm', 0, 3000);
+                    createFloatingNumber(target, '繳械', 'debuff');
+                    addLog(`⚡ ${team === 'player' ? '己方' : '敵方'}${unit.name} 裝備的 [盛氣凌敵] 使 ${target.name} 繳械，持續 3 秒！`, 'skill');
+                });
             }
         }
-    });
-
-    // Apply 八門金鎖陣 (Bamen Jinsuo) Command debuff
-    ['player', 'enemy'].forEach(teamName => {
-        const luSu = activeUnits.find(u => u.team === teamName && u.templateId === 'lu_su');
-        if (luSu) {
-            const enemies = activeUnits.filter(u => u.team !== teamName && !u.isBuilding && !u.isDead);
-            enemies.sort((a, b) => b.stats.wuli - a.stats.wuli);
-            const targets = enemies.slice(0, 2);
+        else if (skill.id === 'bamen_jinsuo') {
+            const reducVal = [0.25, 0.35, 0.45][level - 1] || 0.25;
+            const targets = [...enemies].sort((a, b) => b.stats.wuli - a.stats.wuli).slice(0, 2);
             targets.forEach(target => {
-                applyStatusEffect(target, 'bamen_debuff', 0.35, 5000);
-                createFloatingNumber(target, '八門金鎖', 'shield');
-                addLog(`📐 ${teamName === 'player' ? '己方' : '敵方'}魯肅發動 [八門金鎖陣]！降低 ${target.name} 35% 造成的傷害，持續 5 秒！`, 'skill');
+                applyStatusEffect(target, 'bamen_debuff', reducVal, 5000);
+                createFloatingNumber(target, '八門金鎖', 'debuff');
+                addLog(`📐 ${team === 'player' ? '己方' : '敵方'}${unit.name} 裝備的 [八門金鎖陣] 降低 ${target.name} ${Math.round(reducVal * 100)}% 造成傷害，持續 5 秒！`, 'skill');
+            });
+        }
+        else if (skill.id === 'zanbi_qifeng') {
+            const reducVal = [0.30, 0.40, 0.50][level - 1] || 0.30;
+            let highestZhiliUnit = allies.reduce((max, u) => u.stats.zhili > max.stats.zhili ? u : max, allies[0]);
+            let highestWuliUnit = allies.reduce((max, u) => u.stats.wuli > max.stats.wuli ? u : max, allies[0]);
+            
+            if (highestZhiliUnit) {
+                applyStatusEffect(highestZhiliUnit, 'zanbi_phys_reduc', reducVal, 5000);
+                createFloatingNumber(highestZhiliUnit, '暫避其鋒', 'shield');
+                addLog(`🛡️ ${team === 'player' ? '己方' : '敵方'}${unit.name} 裝備的 [暫避其鋒] 賦予 ${highestZhiliUnit.name} ${Math.round(reducVal * 100)}% 物理免傷，持續 5 秒！`, 'skill');
+            }
+            if (highestWuliUnit) {
+                applyStatusEffect(highestWuliUnit, 'zanbi_magic_reduc', reducVal, 5000);
+                createFloatingNumber(highestWuliUnit, '暫避其鋒', 'shield');
+                addLog(`🛡️ ${team === 'player' ? '己方' : '敵方'}${unit.name} 裝備的 [暫避其鋒] 賦予 ${highestWuliUnit.name} ${Math.round(reducVal * 100)}% 謀略免傷，持續 5 秒！`, 'skill');
+            }
+        }
+        else if (skill.id === 'yudi_pingzhang') {
+            const reducVal = [0.15, 0.20, 0.25][level - 1] || 0.15;
+            const targets = getRandomTargets(allies, 2);
+            targets.forEach(target => {
+                applyStatusEffect(target, 'yudi_reduc', reducVal, 5000);
+                createFloatingNumber(target, '禦敵屏障', 'shield');
+                addLog(`🛡️ ${team === 'player' ? '己方' : '敵方'}${unit.name} 裝備的 [禦敵屏障] 賦予 ${target.name} ${Math.round(reducVal * 100)}% 傷害減免，持續 5 秒！`, 'skill');
             });
         }
     });
@@ -746,6 +776,50 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
 export function startBattle() {
     lastTime = Date.now();
     battleTimer = setInterval(combatTick, combatTickInterval);
+}
+
+// ==========================================
+// CUSTOM DYNAMIC TIMED ACTIVE SKILLS
+// ==========================================
+function castDuohunXiepo(caster) {
+    if (caster.isDead) return;
+    const isSilenced = caster.statusEffects.some(eff => eff.type === 'silence');
+    if (isSilenced) return;
+
+    const level = (caster.equippedSkill && caster.equippedSkill.level) || 1;
+    const stealPct = [0.15, 0.19, 0.23][level - 1] || 0.15;
+    
+    const enemies = activeUnits.filter(u => u.team !== caster.team && !u.isDead && !u.isBuilding);
+    if (enemies.length === 0) return;
+    const target = enemies[Math.floor(Math.random() * enemies.length)];
+    
+    const stealWuli = Math.round(target.stats.wuli * stealPct);
+    const stealZhili = Math.round(target.stats.zhili * stealPct);
+    const stealTongshuai = Math.round(target.stats.tongshuai * stealPct);
+    
+    target.stats.wuli = Math.max(1, target.stats.wuli - stealWuli);
+    target.stats.zhili = Math.max(1, target.stats.zhili - stealZhili);
+    target.stats.tongshuai = Math.max(1, target.stats.tongshuai - stealTongshuai);
+    
+    caster.stats.wuli += stealWuli;
+    caster.stats.zhili += stealZhili;
+    caster.stats.tongshuai += stealTongshuai;
+    
+    applyStatusEffect(caster, 'stat_steal_buff', 0, 4000, {
+        wuliSteal: stealWuli,
+        zhiliSteal: stealZhili,
+        tongshuaiSteal: stealTongshuai
+    });
+    
+    applyStatusEffect(target, 'stat_steal_debuff', 0, 4000, {
+        wuliSteal: stealWuli,
+        zhiliSteal: stealZhili,
+        tongshuaiSteal: stealTongshuai
+    });
+    
+    createFloatingNumber(caster, '奪魂', 'shield');
+    createFloatingNumber(target, '奪魂', 'dmg');
+    addLog(`✨ ${caster.name} 發動戰法 [奪魂挾魄]，偷取 ${target.name} ${Math.round(stealPct * 100)}% 屬性（武力+${stealWuli}，智力+${stealZhili}，統率+${stealTongshuai}），持續 4 秒！`, 'skill');
 }
 
 // ==========================================
@@ -796,6 +870,9 @@ function combatTick() {
                     u.stats.wuli = Math.max(1, u.stats.wuli - eff.wuliGained);
                     u.stats.zhili = Math.max(1, u.stats.zhili - eff.zhiliGained);
                     u.stats.tongshuai = Math.max(1, u.stats.tongshuai - eff.tongshuaiGained);
+                }
+                if (eff.type === 'luli_tongxin_buff') {
+                    u.stats.tongshuai = Math.max(1, u.stats.tongshuai - eff.val);
                 }
                 return false;
             }
@@ -984,6 +1061,62 @@ function combatTick() {
                 enemies.forEach(enemy => {
                     takeDamage(enemy, baseDmg, 'skill', u);
                     createFloatingNumber(enemy, '士別三日', 'dmg');
+                });
+            }
+        }
+
+        // Custom Active/Periodic Skill [奪魂挾魄] (Duohun Xiepo) - Trigger every 5.5 seconds
+        if (u.equippedSkill && u.equippedSkill.id === 'duohun_xiepo') {
+            if (!u.lastDuohunTime) {
+                u.lastDuohunTime = now;
+            }
+            if (now - u.lastDuohunTime >= 5500) {
+                u.lastDuohunTime = now;
+                const target = findClosestEnemy(u);
+                if (target) {
+                    const lvl = u.equippedSkill.level || 1;
+                    const pct = [0.15, 0.19, 0.23][lvl - 1] || 0.15;
+                    
+                    const wuliSteal = Math.round(target.stats.wuli * pct);
+                    const zhiliSteal = Math.round(target.stats.zhili * pct);
+                    const tongshuaiSteal = Math.round(target.stats.tongshuai * pct);
+                    
+                    u.stats.wuli += wuliSteal;
+                    u.stats.zhili += zhiliSteal;
+                    u.stats.tongshuai += tongshuaiSteal;
+                    
+                    target.stats.wuli = Math.max(1, target.stats.wuli - wuliSteal);
+                    target.stats.zhili = Math.max(1, target.stats.zhili - zhiliSteal);
+                    target.stats.tongshuai = Math.max(1, target.stats.tongshuai - tongshuaiSteal);
+                    
+                    applyStatusEffect(u, 'stat_steal_buff', 0, 4000, { wuliSteal, zhiliSteal, tongshuaiSteal });
+                    applyStatusEffect(target, 'stat_steal_debuff', 0, 4000, { wuliSteal, zhiliSteal, tongshuaiSteal });
+                    
+                    createFloatingNumber(u, '奪魂', 'heal');
+                    createFloatingNumber(target, '屬性吸取', 'dmg');
+                    addLog(`🔮 ${u.name} 裝備的 [奪魂挾魄] 奪取了 ${target.name} ${Math.round(pct * 100)}% 的屬性！`, 'skill');
+                }
+            }
+        }
+
+        // Custom Passive Skill [擊其惰歸] (Jiqi Duogui) - offensive trigger after 6 seconds of xu_wei
+        const xuWeiIndex = u.statusEffects.findIndex(e => e.type === 'xu_wei');
+        if (xuWeiIndex !== -1) {
+            const eff = u.statusEffects[xuWeiIndex];
+            if (now - eff.createdAt >= 6000) {
+                u.statusEffects.splice(xuWeiIndex, 1);
+                
+                const lvl = (u.equippedSkill && u.equippedSkill.level) || 1;
+                const mult = [2.15, 2.65, 3.15][lvl - 1] || 2.15;
+                const dmg = Math.round(u.stats.wuli * mult);
+                
+                createFloatingNumber(u, '擊其惰歸', 'skill');
+                addLog(`⚔️ [擊其惰歸] 進攻觸發：${u.name} 的「蓄威」滿 6 秒未受重創，對敵方全體造成物理蓄力重擊！`, 'skill');
+                
+                activeUnits.forEach(other => {
+                    if (other.isDead || other.team === u.team) return;
+                    takeDamage(other, dmg, 'skill', u, false);
+                    createFloatingNumber(other, '擊其惰歸', 'dmg');
                 });
             }
         }
@@ -1336,6 +1469,56 @@ function performAttack(attacker, target, now) {
         }
     }
 
+    // Custom equipped Assault skill trigger
+    if (attacker.equippedSkill && attacker.equippedSkill.type === 'assault' && !target.isDead) {
+        const eqSkill = attacker.equippedSkill;
+        const lvl = eqSkill.level || 1;
+        if (eqSkill.id === 'qianggong') {
+            const chance = 0.35;
+            const duration = [2000, 3000, 4000][lvl - 1] || 2000;
+            if (Math.random() < chance) {
+                applyStatusEffect(attacker, 'double_attack', 0, duration);
+                createFloatingNumber(attacker, '連擊', 'shield');
+                addLog(`⚔️ ${attacker.name} 觸發突擊戰法 [強攻]！獲得連擊狀態，持續 ${duration / 1000} 秒！`, 'skill');
+            }
+        } else if (eqSkill.id === 'shouqi_daoluo') {
+            const chance = 0.30;
+            const mult = [1.00, 1.30, 1.60][lvl - 1] || 1.00;
+            if (Math.random() < chance) {
+                const extraDmg = Math.round(attacker.stats.wuli * mult);
+                takeDamage(target, extraDmg, 'attack', attacker, false);
+                createFloatingNumber(target, '手起刀落', 'dmg');
+                addLog(`⚔️ ${attacker.name} 觸發突擊戰法 [手起刀落]！對 ${target.name} 額外造成 ${extraDmg} 點物理傷害！`, 'skill');
+            }
+        }
+    }
+
+    // Custom Passive Skill [奮突] (Fentu) trigger
+    if (attacker.equippedSkill && attacker.equippedSkill.id === 'fentu' && !attacker.isDead) {
+        const lvl = attacker.equippedSkill.level || 1;
+        const incPct = [0.06, 0.08, 0.10][lvl - 1] || 0.06;
+        if (!attacker.fentuStacks) attacker.fentuStacks = 0;
+        if (attacker.fentuStacks < 3) {
+            attacker.fentuStacks++;
+            applyStatusEffect(attacker, 'fentu_buff', incPct, 9999999);
+            createFloatingNumber(attacker, `奮突 x${attacker.fentuStacks}`, 'shield');
+            addLog(`奮突：${attacker.name} 普攻觸發 [奮突]，物理傷害提升 ${Math.round(incPct * 100)}%（當前層數：${attacker.fentuStacks}）。`, 'skill');
+        }
+    }
+
+    // royal_marriage Fate: Sun Shangxiang basic attack grants Liu Bei +5 energy
+    if (attacker.templateId === 'sun_shangxiang') {
+        const teamMarriage = attacker.team === 'player' ? activeFates.includes('royal_marriage') : (oppActiveFates && oppActiveFates.includes('royal_marriage'));
+        if (teamMarriage) {
+            const liuBei = activeUnits.find(u => !u.isDead && u.team === attacker.team && u.templateId === 'liu_bei');
+            if (liuBei) {
+                liuBei.energy = Math.min(100, liuBei.energy + 5);
+                createFloatingNumber(liuBei, '+5 能量', 'heal');
+                addLog(`💞 梟雄聯姻：孫尚香的普通攻擊使劉備額外獲得 5 點能量！`, 'skill');
+            }
+        }
+    }
+
     // Five Tigers stun-on-hit Fate check
     const hasFiveTigers = attacker.team === 'player' ? activeFates.includes('five_tigers') : (oppActiveFates && oppActiveFates.includes('five_tigers'));
     if (hasFiveTigers && ['guan_yu', 'zhang_fei', 'zhao_yun', 'ma_chao'].includes(attacker.templateId)) {
@@ -1565,6 +1748,13 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
         // Apply damage reduction defenses from Command (tongshuai)
         let defense = unit.stats.tongshuai;
         
+        // Chuanci ignore defense check
+        if (source && type === 'attack' && source.equippedSkill && source.equippedSkill.id === 'chuanci') {
+            const lvl = source.equippedSkill.level || 1;
+            const ignorePct = [0.10, 0.15, 0.20][lvl - 1] || 0.10;
+            defense = Math.round(defense * (1 - ignorePct));
+        }
+        
         // Buff defenses
         const ysBuff = unit.statusEffects.find(e => e.type === 'yuan_shao_def_buff');
         if (ysBuff) {
@@ -1655,14 +1845,20 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
         if (isPhysical) {
             const zanbiPhys = unit.statusEffects.find(e => e.type === 'zanbi_phys_reduc');
             if (zanbiPhys) {
-                reductionMult *= (1 - 0.40);
+                reductionMult *= (1 - zanbiPhys.val);
             }
         }
         if (isMagic) {
             const zanbiMagic = unit.statusEffects.find(e => e.type === 'zanbi_magic_reduc');
             if (zanbiMagic) {
-                reductionMult *= (1 - 0.40);
+                reductionMult *= (1 - zanbiMagic.val);
             }
+        }
+        
+        // Apply 禦敵屏障 (Yudi Pingzhang) damage reduction
+        const yudiBuff = unit.statusEffects.find(e => e.type === 'yudi_reduc');
+        if (yudiBuff) {
+            reductionMult *= (1 - yudiBuff.val);
         }
     }
 
@@ -1670,12 +1866,38 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
     if (source) {
         const bamenDebuff = source.statusEffects.find(e => e.type === 'bamen_debuff');
         if (bamenDebuff) {
-            netDmg = Math.round(netDmg * (1 - 0.35));
+            netDmg = Math.round(netDmg * (1 - bamenDebuff.val));
+        }
+    }
+    
+    // Apply Fentu (奮突) physical damage buff
+    const isPhysical = (type === 'attack') || (source && source.stats.wuli > source.stats.zhili);
+    if (source && isPhysical) {
+        const fentuEffects = source.statusEffects.filter(e => e.type === 'fentu_buff');
+        if (fentuEffects.length > 0) {
+            let fentuMult = 1;
+            fentuEffects.forEach(e => fentuMult += e.val);
+            netDmg = Math.round(netDmg * fentuMult);
         }
     }
     
     netDmg = Math.round(netDmg * reductionMult);
     if (netDmg <= 0) netDmg = 1; // Minimum 1 damage
+    
+    // Custom Passive Skill [擊其惰歸] (Jiqi Duogui) defensive trigger
+    const xuWeiIndex = unit.statusEffects.findIndex(e => e.type === 'xu_wei');
+    if (xuWeiIndex !== -1 && netDmg >= (unit.hpMax * 0.40)) {
+        unit.statusEffects.splice(xuWeiIndex, 1);
+        applyStatusEffect(unit, 'evade', 100, 2000);
+        
+        // Heal self: 20% * (1 + wuli/150)
+        const healPct = 0.20 * (1 + unit.stats.wuli / 150);
+        const healVal = Math.round(unit.hpMax * healPct);
+        healUnit(unit, healVal, unit);
+        createFloatingNumber(unit, '規避/回血', 'heal');
+        addLog(`🛡️ [擊其惰歸] 防守觸發：${unit.name} 受到單次重創（大於40%生命值），消耗「蓄威」獲得 100% 規避 2 秒，並恢復自身 ${healVal} 點生命值！`, 'skill');
+        return; // Current damage negated
+    }
     
     // Handle Shield absorption first
     if (unit.shield > 0) {
@@ -1762,6 +1984,19 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
         }
     }
 
+    // Custom Passive Skill [救援] (Jiuyuan) trigger
+    if (unit.equippedSkill && unit.equippedSkill.id === 'jiuyuan' && !unit.isDead) {
+        const lvl = unit.equippedSkill.level || 1;
+        const chance = [0.30, 0.40, 0.50][lvl - 1] || 0.30;
+        const healPct = [0.30, 0.40, 0.50][lvl - 1] || 0.30;
+        if (Math.random() < chance) {
+            const healVal = Math.round(unit.stats.zhili * healPct);
+            healUnit(unit, healVal, unit);
+            createFloatingNumber(unit, '救援', 'heal');
+            addLog(`🏥 ${unit.name} 受到傷害，觸發被動戰法 [救援] 自身恢復 ${healVal} 點生命值！`, 'skill');
+        }
+    }
+
     // Update reference HP for surviving buildings in state
     if (unit.team === 'player' && unit.boardReference) {
         unit.boardReference.hp = unit.hp;
@@ -1784,6 +2019,16 @@ function healUnit(unit, amount, source = null) {
     
     if (source) {
         source.healingDone = (source.healingDone || 0) + healVal;
+    }
+
+    // Apply royal_marriage Fate: Liu Bei heals Sun Shangxiang -> grant 100% equivalent shield
+    const teamMarriage = unit.team === 'player' ? activeFates.includes('royal_marriage') : (oppActiveFates && oppActiveFates.includes('royal_marriage'));
+    if (source && source.templateId === 'liu_bei' && unit.templateId === 'sun_shangxiang' && teamMarriage && source.team === unit.team) {
+        const shieldAmt = healVal;
+        if (shieldAmt > 0) {
+            addShield(unit, shieldAmt, 3);
+            addLog(`💞 梟雄聯姻：${unit.team === 'player' ? '己方' : '敵方'}劉備對孫尚香的治療轉化為 ${shieldAmt} 點護盾（持續 3 秒）！`, 'skill');
+        }
     }
     
     if (unit.team === 'player' && unit.boardReference) {
@@ -1858,6 +2103,21 @@ function castSkill(unit) {
         takeDamage(unit, counterDmg, 'skill', zhuge, false);
         unit.energy = 0; // Consume their energy anyway
         return;
+    }
+
+    // Custom Passive [擊其惰歸] (Jiqi Duogui) - gain xu_wei status when casting/full energy
+    if (unit.equippedSkill && unit.equippedSkill.id === 'jiqi_duogui') {
+        const hasXuWei = unit.statusEffects.some(e => e.type === 'xu_wei');
+        if (!hasXuWei) {
+            unit.statusEffects.push({
+                type: 'xu_wei',
+                val: 0,
+                expiry: Date.now() + 9999999, // practically infinite until consumed
+                createdAt: Date.now()
+            });
+            createFloatingNumber(unit, '蓄威', 'shield');
+            addLog(`🛡️ [擊其惰歸] 觸發：${unit.name} 能量充滿，獲得「蓄威」狀態！`, 'skill');
+        }
     }
 
     unit.energy = 0; // Consume energy
@@ -2501,6 +2761,301 @@ function castSkill(unit) {
     if (hasTianshui && ['zhuge_liang', 'zhao_yun', 'jiang_wei'].includes(unit.templateId)) {
         unit.energy = Math.min(100, unit.energy + 10);
         addLog(`🔮 天水奇謀！${unit.name} 施放主動戰法，額外獲得 10 點能量！`, 'skill');
+    }
+
+    // Custom Equippable Active Skill trigger
+    if (unit.equippedSkill && unit.equippedSkill.type === 'active') {
+        executeEquippedActiveSkill(unit);
+    }
+}
+
+function executeEquippedActiveSkill(unit) {
+    if (unit.isDead) return;
+    const skill = unit.equippedSkill;
+    const lvl = skill.level || 1;
+    
+    // Silence check
+    const isSilenced = unit.statusEffects.some(eff => eff.type === 'silence');
+    if (isSilenced) return;
+    
+    addLog(`✨ ${unit.name} 發動裝備主動戰法 [${skill.name}]（${lvl} 級）！`, 'skill');
+    createFloatingNumber(unit, skill.name, 'skill');
+    
+    // Trigger brief cast flash animation
+    const dom = document.getElementById(unit.id);
+    if (dom) {
+        dom.classList.add('casting-skill');
+        setTimeout(() => dom.classList.remove('casting-skill'), 400);
+    }
+    
+    const opponentTeam = unit.team === 'player' ? 'enemy' : 'player';
+    
+    switch (skill.id) {
+        case 'shangbing_famou': {
+            if (Math.random() < 0.40) {
+                const enemies = activeUnits.filter(other => !other.isDead && other.team === opponentTeam);
+                if (enemies.length > 0) {
+                    const lowestZhili = enemies.reduce((min, u) => u.stats.zhili < min.stats.zhili ? u : min, enemies[0]);
+                    const lowestHp = enemies.reduce((min, u) => u.hp < min.hp ? u : min, enemies[0]);
+                    const lowestTongshuai = enemies.reduce((min, u) => u.stats.tongshuai < min.stats.tongshuai ? u : min, enemies[0]);
+                    const highestWuli = enemies.reduce((max, u) => u.stats.wuli > max.stats.wuli ? u : max, enemies[0]);
+                    
+                    const dmgPct = [1.20, 1.50, 1.80][lvl - 1] || 1.20;
+                    const dmgBase = Math.round(unit.stats.zhili * dmgPct);
+                    
+                    const targets = [lowestZhili, lowestHp, lowestTongshuai, highestWuli];
+                    const labels = ['智力最低', '兵力最低', '統率最低', '武力最高'];
+                    
+                    targets.forEach((target, i) => {
+                        if (target && !target.isDead) {
+                            takeDamage(target, dmgBase, 'skill', unit, false);
+                            createFloatingNumber(target, '上兵伐謀', 'dmg');
+                            addLog(`⚔️ [上兵伐謀]（${labels[i]}）：對 ${target.name} 造成 ${dmgBase} 點謀略傷害！`, 'skill');
+                        }
+                    });
+                }
+            } else {
+                addLog(`💨 [上兵伐謀] 發動判定失敗。`, 'skill');
+            }
+            break;
+        }
+        
+        case 'luli_tongxin': {
+            const count = Math.floor(Math.random() * 4) + 1;
+            const healPct = [0.60, 0.85, 1.10][lvl - 1] || 0.60;
+            const tsBonus = [20, 30, 40][lvl - 1] || 20;
+            
+            for (let i = 0; i < count; i++) {
+                const allies = activeUnits.filter(other => !other.isDead && other.team === unit.team);
+                if (allies.length === 0) break;
+                const injured = allies.filter(other => other.hp < other.hpMax);
+                let target = null;
+                if (injured.length > 0) {
+                    target = injured[Math.floor(Math.random() * injured.length)];
+                } else {
+                    target = allies.reduce((min, u) => (u.hp / u.hpMax) < (min.hp / min.hpMax) ? u : min, allies[0]);
+                }
+                
+                if (target) {
+                    const healVal = Math.round(unit.stats.zhili * healPct);
+                    healUnit(target, healVal, unit);
+                    
+                    const finalTS = Math.round(tsBonus * (1 + unit.stats.zhili / 150));
+                    target.stats.tongshuai += finalTS;
+                    applyStatusEffect(target, 'luli_tongxin_buff', finalTS, 3000);
+                    
+                    createFloatingNumber(target, `勠力同心`, 'heal');
+                    createFloatingNumber(target, `統率 +${finalTS}`, 'shield');
+                    addLog(`🤝 [勠力同心]（第 ${i+1}/${count} 次）：治療 ${target.name} ${healVal} 點生命，並提升其 ${finalTS} 點統率（持續 3 秒）！`, 'skill');
+                }
+            }
+            break;
+        }
+        
+        case 'beishe_guiche': {
+            const targetEnemy = findClosestEnemy(unit);
+            if (targetEnemy) {
+                const dmgPct = [1.20, 1.50, 1.80][lvl - 1] || 1.20;
+                const healPct = [0.60, 0.80, 1.00][lvl - 1] || 0.60;
+                
+                const dmg = Math.round(unit.stats.zhili * dmgPct);
+                const healVal = Math.round(unit.stats.zhili * healPct);
+                
+                activeUnits.forEach(other => {
+                    if (other.isDead) return;
+                    if (other.team === opponentTeam && getDistance(targetEnemy, other) <= 1) {
+                        takeDamage(other, dmg, 'skill', unit, false);
+                        createFloatingNumber(other, '杯蛇鬼車', 'dmg');
+                    }
+                });
+                
+                const allies = activeUnits.filter(other => !other.isDead && other.team === unit.team);
+                if (allies.length > 0) {
+                    const sortedAllies = [...allies].sort((a, b) => (a.hp / a.hpMax) - (b.hp / b.hpMax));
+                    const targets = sortedAllies.slice(0, 2);
+                    targets.forEach(ally => {
+                        healUnit(ally, healVal, unit);
+                        createFloatingNumber(ally, '杯蛇鬼車', 'heal');
+                    });
+                    addLog(`🐍 [杯蛇鬼車]：對敵方範圍造成謀略傷害，並治療我軍最虛弱的 2 名隊友！`, 'skill');
+                }
+            }
+            break;
+        }
+        
+        case 'pozhen_cuijian': {
+            const targetEnemy = findClosestEnemy(unit);
+            if (targetEnemy) {
+                const dmgPct = [1.40, 1.80, 2.20][lvl - 1] || 1.40;
+                const debuffPct = [0.20, 0.25, 0.30][lvl - 1] || 0.20;
+                
+                const dmg = Math.round(unit.stats.wuli * dmgPct);
+                takeDamage(targetEnemy, dmg, 'skill', unit, false);
+                createFloatingNumber(targetEnemy, '破陣摧堅', 'dmg');
+                
+                const tsShred = Math.round(targetEnemy.stats.tongshuai * debuffPct);
+                const zlShred = Math.round(targetEnemy.stats.zhili * debuffPct);
+                
+                targetEnemy.stats.tongshuai = Math.max(1, targetEnemy.stats.tongshuai - tsShred);
+                targetEnemy.stats.zhili = Math.max(1, targetEnemy.stats.zhili - zlShred);
+                
+                applyStatusEffect(targetEnemy, 'tongshuai_shred', tsShred, 4000);
+                applyStatusEffect(targetEnemy, 'zhili_shred', zlShred, 4000);
+                
+                createFloatingNumber(targetEnemy, '屬性降低', 'debuff');
+                addLog(`⚔️ [破陣摧堅]：對 ${targetEnemy.name} 造成 ${dmg} 點物理傷害，並降低其 20%~30% 統率與智力，持續 4 秒！`, 'skill');
+            }
+            break;
+        }
+        
+        case 'suoxiang_pimi': {
+            const delay = Math.round(1000 / settings.speed);
+            addLog(`⏳ ${unit.name} 蓄力發動 [所向披靡]...`, 'skill');
+            createFloatingNumber(unit, '蓄力中', 'shield');
+            
+            setTimeout(() => {
+                if (unit.isDead) return;
+                
+                const isSilencedChannel = unit.statusEffects.some(eff => eff.type === 'silence');
+                if (isSilencedChannel) {
+                    addLog(`💨 ${unit.name} 的 [所向披靡] 在蓄力期間因計窮而被中斷！`, 'skill');
+                    return;
+                }
+                
+                const dmgPct = [1.80, 2.30, 2.80][lvl - 1] || 1.80;
+                const dmg = Math.round(unit.stats.wuli * dmgPct);
+                
+                addLog(`💥 [所向披靡] 蓄力發射！對敵方全體造成毀滅性打擊！`, 'skill');
+                
+                activeUnits.forEach(other => {
+                    if (other.isDead || other.team === unit.team) return;
+                    takeDamage(other, dmg, 'skill', unit, false);
+                    createFloatingNumber(other, '所向披靡', 'dmg');
+                });
+            }, delay);
+            break;
+        }
+        
+        case 'bishi_jixu': {
+            const enemies = activeUnits.filter(other => !other.isDead && other.team === opponentTeam);
+            if (enemies.length > 0) {
+                const targetEnemy = enemies.reduce((min, u) => u.stats.tongshuai < min.stats.tongshuai ? u : min, enemies[0]);
+                if (targetEnemy) {
+                    const dmgPct = [1.50, 1.90, 2.30][lvl - 1] || 1.50;
+                    const dmg = Math.round(unit.stats.wuli * dmgPct);
+                    
+                    takeDamage(targetEnemy, dmg, 'skill', unit, false);
+                    createFloatingNumber(targetEnemy, '避實擊虛', 'dmg');
+                    addLog(`⚔️ [避實擊虛]：鎖定敵方統率最低者 ${targetEnemy.name} 造成 ${dmg} 點物理重擊！`, 'skill');
+                }
+            }
+            break;
+        }
+        
+        case 'luofeng': {
+            const targetEnemy = findClosestEnemy(unit);
+            if (targetEnemy) {
+                const dmgPct = [1.40, 1.80, 2.20][lvl - 1] || 1.40;
+                const dur = [1.5, 2.0, 2.5][lvl - 1] || 1.5;
+                const dmg = Math.round(unit.stats.wuli * dmgPct);
+                
+                takeDamage(targetEnemy, dmg, 'skill', unit, false);
+                applyStatusEffect(targetEnemy, 'silence', 0, dur * 1000);
+                
+                createFloatingNumber(targetEnemy, '落鳳', 'dmg');
+                createFloatingNumber(targetEnemy, '計窮', 'shield');
+                addLog(`🏹 [落鳳]：對 ${targetEnemy.name} 造成 ${dmg} 點傷害並使其計窮（無法施放主動戰法） ${dur} 秒！`, 'skill');
+            }
+            break;
+        }
+        
+        case 'zuoshou_gucheng': {
+            const allies = activeUnits.filter(other => !other.isDead && other.team === unit.team);
+            if (allies.length > 0) {
+                const healPct = [0.90, 1.20, 1.50][lvl - 1] || 0.90;
+                const sortedAllies = [...allies].sort((a, b) => a.hp - b.hp);
+                const targets = sortedAllies.slice(0, 2);
+                const healVal = Math.round(unit.stats.zhili * healPct);
+                
+                targets.forEach(ally => {
+                    healUnit(ally, healVal, unit);
+                    createFloatingNumber(ally, '坐守孤城', 'heal');
+                });
+                addLog(`🏰 [坐守孤城]：為己方兵力最低的 2 名盟友恢復 ${healVal} 生命值！`, 'skill');
+            }
+            break;
+        }
+        
+        case 'zongbing_jielue': {
+            const targetEnemy = findClosestEnemy(unit);
+            if (targetEnemy) {
+                const dmgPct = [1.30, 1.60, 2.00][lvl - 1] || 1.30;
+                const dur = [1.0, 1.5, 2.0][lvl - 1] || 1.0;
+                const dmg = Math.round(unit.stats.wuli * dmgPct);
+                
+                takeDamage(targetEnemy, dmg, 'skill', unit, false);
+                applyStatusEffect(targetEnemy, 'stun', 0, dur * 1000);
+                
+                createFloatingNumber(targetEnemy, '縱兵劫掠', 'dmg');
+                createFloatingNumber(targetEnemy, '震懾', 'shield');
+                addLog(`⚔️ [縱兵劫掠]：對 ${targetEnemy.name} 造成 ${dmg} 點傷害並使其震懾（眩暈） ${dur} 秒！`, 'skill');
+            }
+            break;
+        }
+        
+        case 'baozha': {
+            const allies = activeUnits.filter(other => !other.isDead && other.team === unit.team);
+            if (allies.length > 0) {
+                const healPct = [1.00, 1.30, 1.60][lvl - 1] || 1.00;
+                const healVal = Math.round(unit.stats.zhili * healPct);
+                
+                let target = unit;
+                const otherAllies = allies.filter(o => o !== unit);
+                if (otherAllies.length > 0) {
+                    const closestAlly = otherAllies.reduce((min, u) => getDistance(unit, u) < getDistance(unit, min) ? u : min, otherAllies[0]);
+                    if ((closestAlly.hp / closestAlly.hpMax) < (unit.hp / unit.hpMax)) {
+                        target = closestAlly;
+                    }
+                }
+                
+                healUnit(target, healVal, unit);
+                createFloatingNumber(target, '包紮', 'heal');
+                addLog(`🩹 [包紮]：為 ${target.name} 恢復了 ${healVal} 生命值！`, 'skill');
+            }
+            break;
+        }
+        
+        case 'huikan': {
+            const targetEnemy = findClosestEnemy(unit);
+            if (targetEnemy) {
+                const dmgPct = [1.00, 1.30, 1.60][lvl - 1] || 1.00;
+                const dmg = Math.round(unit.stats.wuli * dmgPct);
+                
+                takeDamage(targetEnemy, dmg, 'skill', unit, false);
+                createFloatingNumber(targetEnemy, '揮砍', 'dmg');
+                addLog(`⚔️ [揮砍]：對最近敵軍 ${targetEnemy.name} 造成 ${dmg} 點物理傷害！`, 'skill');
+            }
+            break;
+        }
+        
+        case 'huogong': {
+            const targetEnemy = findClosestEnemy(unit);
+            if (targetEnemy) {
+                const dmgPct = [0.80, 1.10, 1.40][lvl - 1] || 0.80;
+                const burnPct = [0.15, 0.20, 0.25][lvl - 1] || 0.15;
+                
+                const dmg = Math.round(unit.stats.zhili * dmgPct);
+                const burnVal = Math.round(unit.stats.zhili * burnPct);
+                
+                takeDamage(targetEnemy, dmg, 'skill', unit, false);
+                applyStatusEffect(targetEnemy, 'burn', burnVal, 3000);
+                
+                createFloatingNumber(targetEnemy, '火攻', 'dmg');
+                createFloatingNumber(targetEnemy, '灼燒', 'dmg');
+                addLog(`🔥 [火攻]：對最近敵軍 ${targetEnemy.name} 造成 ${dmg} 點謀略傷害，並附加灼燒效果！`, 'skill');
+            }
+            break;
+        }
     }
 }
 

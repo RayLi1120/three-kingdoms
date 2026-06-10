@@ -2722,3 +2722,403 @@ body {
     border-color: rgba(255, 159, 67, 0.4);
     color: var(--gold);
 }
+
+/* ==========================================================================
+   EQUIPPABLE SKILLS (戰法) SYSTEM STYLES
+   ========================================================================== */
+.shop-tabs {
+    display: flex;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.35);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.shop-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    border-bottom: 2px solid transparent;
+    letter-spacing: 1px;
+}
+
+.shop-tab:hover {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.shop-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(255, 215, 0, 0.04);
+}
+
+.skills-shop-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.skills-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+/* Skill card in the shop */
+.skill-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 120px;
+    transition: all 0.25s ease;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.skill-card:hover {
+    border-color: rgba(255, 215, 0, 0.3);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.skill-card.cost-5 { border-color: rgba(255, 71, 87, 0.4); } /* S+ S-class Red/Gold */
+.skill-card.cost-4 { border-color: rgba(255, 215, 0, 0.3); } /* S-class Gold */
+.skill-card.cost-3 { border-color: rgba(84, 160, 255, 0.3); } /* A-class Blue */
+.skill-card.cost-2 { border-color: rgba(46, 213, 115, 0.3); } /* B-class Green */
+.skill-card.cost-1 { border-color: rgba(148, 163, 184, 0.3); } /* C-class Grey */
+
+.skill-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.skill-card-name {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-family: var(--font-header);
+    letter-spacing: 0.5px;
+}
+
+.skill-card-cost {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--gold);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.skill-card-type {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.skill-card-desc {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 8px;
+    padding-right: 2px;
+}
+
+.skill-card-desc::-webkit-scrollbar {
+    width: 2px;
+}
+.skill-card-desc::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-buy-skill {
+    width: 100%;
+    padding: 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    background: linear-gradient(135deg, var(--gold) 0%, #d4af37 100%);
+    color: #000;
+    transition: all 0.2s;
+}
+
+.btn-buy-skill:hover {
+    filter: brightness(1.1);
+}
+
+/* Skill Inventory styles */
+.inventory-container {
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+.inventory-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
+    max-height: 110px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.inventory-grid::-webkit-scrollbar {
+    width: 4px;
+}
+.inventory-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+}
+
+.inventory-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 72px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.inventory-card:hover {
+    background: rgba(255, 215, 0, 0.03);
+    border-color: rgba(255, 215, 0, 0.2);
+}
+
+.inventory-card.selected {
+    background: rgba(255, 215, 0, 0.1) !important;
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+    animation: pulseGlow 1.5s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from { box-shadow: 0 0 4px rgba(255, 215, 0, 0.2); }
+    to { box-shadow: 0 0 12px rgba(255, 215, 0, 0.4); }
+}
+
+.inv-card-name {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inv-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+}
+
+.inv-card-actions {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+}
+
+.btn-inv-upgrade {
+    flex: 1;
+    padding: 2px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--gold);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.btn-inv-upgrade:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: var(--gold);
+}
+
+/* Equipped slot styling in the detail card */
+.detail-skill-slot {
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.skill-slot-header {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.skill-slot-empty {
+    border: 1.5px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-style: italic;
+    background: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.skill-slot-empty:hover {
+    border-color: rgba(255, 215, 0, 0.25);
+    color: var(--text-secondary);
+    background: rgba(255, 215, 0, 0.02);
+}
+
+.skill-slot-equipped {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid rgba(255, 215, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.equipped-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.equipped-name-level {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--gold);
+    font-family: var(--font-header);
+}
+
+.btn-unequip-skill {
+    background: transparent;
+    border: none;
+    color: var(--red);
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 71, 87, 0.2);
+    transition: all 0.2s;
+}
+
+.btn-unequip-skill:hover {
+    background: rgba(255, 71, 87, 0.1);
+    border-color: var(--red);
+}
+
+.equipped-type-desc {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+/* Flash highlighting when placing custom skills onto generals */
+.bench-slot.drag-over-skill,
+.grid-unit.drag-over-skill {
+    border-color: var(--gold) !important;
+    background: rgba(255, 215, 0, 0.15) !important;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3) !important;
+}
+
+/* Mobile adjustments for Skills Layout */
+@media (max-width: 768px) {
+    .skills-row {
+        gap: 4px;
+    }
+    .skill-card {
+        padding: 8px;
+        height: 100px;
+    }
+    .skill-card-name {
+        font-size: 0.72rem;
+    }
+    .skill-card-cost {
+        font-size: 0.6rem;
+        padding: 1px 4px;
+    }
+    .skill-card-type {
+        font-size: 0.58rem;
+        margin-bottom: 2px;
+    }
+    .skill-card-desc {
+        font-size: 0.58rem;
+        margin-bottom: 4px;
+    }
+    .btn-buy-skill {
+        padding: 3px;
+        font-size: 0.62rem;
+    }
+    
+    .inventory-grid {
+        grid-template-columns: repeat(3, 1fr);
+        max-height: 90px;
+    }
+    .inventory-card {
+        padding: 4px 6px;
+        height: 60px;
+    }
+    .inv-card-name {
+        font-size: 0.65rem;
+    }
+    .inv-card-meta {
+        font-size: 0.55rem;
+    }
+    .btn-inv-upgrade {
+        font-size: 0.52rem;
+        padding: 1px;
+    }
+}
+

@@ -207,19 +207,52 @@
                 </div>
             </div>
 
-            <!-- Shop Deck / Recruit Slots -->
+            <!-- Shop Deck / Recruit Slots / Skills Shop -->
             <div class="shop-container" style="position: relative;">
-                <div class="shop-title-bar">
-                    <span class="shop-label">招募武將 / 防禦設施</span>
-                    <span class="shop-tip">點擊卡牌招募武將（需消耗金幣），並將其放置在己方下方的4行中</span>
+                <div class="shop-tabs">
+                    <button class="shop-tab active" id="shop-tab-heroes">招募武將</button>
+                    <button class="shop-tab" id="shop-tab-skills">戰法研習</button>
                 </div>
-                <div class="shop-slots-wrapper" style="position: relative;">
-                    <div class="shop-slots" id="shop-slots">
-                        <!-- Shop slots will be rendered dynamically -->
+                
+                <!-- Tab Content 1: Heroes -->
+                <div id="shop-heroes-content">
+                    <div class="shop-title-bar" style="margin-top: 4px;">
+                        <span class="shop-label">招募武將</span>
+                        <span class="shop-tip">點擊卡牌招募武將（需消耗金幣），並將其放置在己方下方的4行中</span>
                     </div>
-                    <div id="drag-sell-zone" class="sell-zone hidden">
-                        <span class="sell-zone-icon">🪙</span>
-                        <span class="sell-zone-text">點擊或拖拽至此出售武將</span>
+                    <div class="shop-slots-wrapper" style="position: relative;">
+                        <div class="shop-slots" id="shop-slots">
+                            <!-- Shop slots will be rendered dynamically -->
+                        </div>
+                        <div id="drag-sell-zone" class="sell-zone hidden">
+                            <span class="sell-zone-icon">🪙</span>
+                            <span class="sell-zone-text">點擊或拖拽至此出售武將</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content 2: Skills -->
+                <div id="shop-skills-content" class="hidden">
+                    <div class="skills-shop-wrapper">
+                        <div class="shop-title-bar" style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span class="shop-label">戰法研習商店</span>
+                                <span class="shop-tip">研習強大戰法，升級戰法，並選擇武將裝備。</span>
+                            </div>
+                            <button class="btn" id="btn-refresh-skills" style="max-width: 145px; font-size: 0.72rem; padding: 4px 10px; height: 32px; min-height: 0; background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.3); color: var(--gold); cursor: pointer; border-radius: 4px; transition: all 0.2s;">刷新戰法 (1金幣)</button>
+                        </div>
+                        <div class="skills-row" id="skills-shop-slots">
+                            <!-- Skills shop slots will be rendered here -->
+                        </div>
+                        <div class="inventory-container">
+                            <div class="inventory-header">
+                                <span>我的戰法倉庫 (點擊選中後，再點擊場地或儲備欄將領以裝備)</span>
+                                <span id="skills-inventory-count">數量: 0</span>
+                            </div>
+                            <div class="inventory-grid" id="skills-inventory-slots">
+                                <!-- Owned skills will be rendered here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

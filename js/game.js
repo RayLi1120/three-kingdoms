@@ -4,8 +4,8 @@
  * duplicate fusion, skill upgrades, and round progression.
  */
 
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js?v=17';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=17';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=18';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=18';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -92,7 +92,10 @@ export const state = {
     settings: {
         audio: true,
         speed: 1
-    }
+    },
+    skillsInventory: [],
+    skillsShopSlots: [null, null, null],
+    selectedSkillIndex: -1
 };
 // DOM Elements
 let elRound, elGold, elCostDisplay, elCostBarFill, elLivesContainer;
@@ -107,6 +110,10 @@ let elBtnQuickAudio, elBtnQuickSpeed, elSellZone, elMobileIpLink;
 let elPvpOverlay, elPvpStatusText, elPvpTimerVal, elBtnPvpCancel;
 // Username DOM elements
 let elUsernameOverlay, elUsernameInput, elUsernameConfirm, elUsernameError, elUsernameCharCount, elPlayerTag;
+
+// Skills DOM elements
+let elShopTabHeroes, elShopTabSkills, elShopHeroesContent, elShopSkillsContent;
+let elBtnRefreshSkills, elSkillsShopSlots, elSkillsInventorySlots, elSkillsInventoryCount;
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -169,6 +176,16 @@ function cacheElements() {
     elUsernameError    = document.getElementById('username-error');
     elUsernameCharCount = document.getElementById('username-char-count');
     elPlayerTag        = document.getElementById('player-tag');
+
+    // Skills elements
+    elShopTabHeroes = document.getElementById('shop-tab-heroes');
+    elShopTabSkills = document.getElementById('shop-tab-skills');
+    elShopHeroesContent = document.getElementById('shop-heroes-content');
+    elShopSkillsContent = document.getElementById('shop-skills-content');
+    elBtnRefreshSkills = document.getElementById('btn-refresh-skills');
+    elSkillsShopSlots = document.getElementById('skills-shop-slots');
+    elSkillsInventorySlots = document.getElementById('skills-inventory-slots');
+    elSkillsInventoryCount = document.getElementById('skills-inventory-count');
 }
 
 function initGrid() {
@@ -204,6 +221,31 @@ function setupEventListeners() {
     elBtnRefresh.addEventListener('click', refreshShopManual);
     elBtnStart.addEventListener('click', triggerBattleStart);
     elBtnOverlayAction.addEventListener('click', handleOverlayAction);
+
+    if (elShopTabHeroes && elShopTabSkills) {
+        elShopTabHeroes.addEventListener('click', () => {
+            elShopTabHeroes.classList.add('active');
+            elShopTabSkills.classList.remove('active');
+            elShopHeroesContent.classList.remove('hidden');
+            elShopSkillsContent.classList.add('hidden');
+            state.selectedSkillIndex = -1; // Reset selection
+            renderSkillsInventory();
+        });
+        elShopTabSkills.addEventListener('click', () => {
+            elShopTabSkills.classList.add('active');
+            elShopTabHeroes.classList.remove('active');
+            elShopSkillsContent.classList.remove('hidden');
+            elShopHeroesContent.classList.add('hidden');
+            renderSkillsShop();
+            renderSkillsInventory();
+        });
+    }
+
+    if (elBtnRefreshSkills) {
+        elBtnRefreshSkills.addEventListener('click', () => {
+            rollSkillsShop(true);
+        });
+    }
 
     elBtnMenuStart.addEventListener('click', handleMenuStart);
     if (elBtnMenuPvp) elBtnMenuPvp.addEventListener('click', handleMenuPvp);
@@ -248,6 +290,11 @@ function setupEventListeners() {
                 const idx = state.selectedEntity.index;
                 
                 // Perform sell
+                if (selected.unit.equippedSkill) {
+                    state.skillsInventory.push(selected.unit.equippedSkill);
+                    addLog(`已將 ${selected.template.name} 裝備的戰法 [${selected.unit.equippedSkill.name}] 退回至戰法倉庫。`, 'system');
+                }
+                
                 if (src === 'bench') {
                     state.bench[idx] = null;
                 } else {
@@ -492,6 +539,7 @@ function rollShop() {
     }
     
     renderShop();
+    rollSkillsShop(false);
 }
 
 function getRandomUnitFromPool(pool) {
@@ -703,9 +751,15 @@ function renderBench() {
         const slot = document.createElement('div');
         slot.className = 'bench-slot';
         
-        // Highlight if selected
+        // Highlight if selected or can equip
         if (state.selectedEntity && state.selectedEntity.source === 'bench' && state.selectedEntity.index === index) {
             slot.classList.add('selected');
+        } else if (state.selectedSkillIndex !== -1 && unit) {
+            const template = UNIT_TEMPLATES[unit.templateId];
+            if (!template.isBuilding) {
+                slot.style.borderColor = 'var(--gold)';
+                slot.style.boxShadow = '0 0 8px rgba(255, 215, 0, 0.4)';
+            }
         }
         
         if (unit) {
@@ -739,6 +793,15 @@ function renderBench() {
 function selectBenchUnit(index) {
     if (state.gameState !== 'prep') return;
     
+    // Check if skill is selected in inventory
+    if (state.selectedSkillIndex !== -1) {
+        const unit = state.bench[index];
+        if (unit) {
+            equipSkillToUnit(unit);
+            return;
+        }
+    }
+    
     // Toggle select
     if (state.selectedEntity && state.selectedEntity.source === 'bench' && state.selectedEntity.index === index) {
         state.selectedEntity = null;
@@ -766,7 +829,8 @@ function handleBenchEmptySlotClick(index) {
         state.bench[index] = {
             templateId: unit.templateId,
             star: unit.star,
-            skillLevel: unit.skillLevel
+            skillLevel: unit.skillLevel,
+            equippedSkill: unit.equippedSkill || null
         };
         
         state.selectedEntity = null;
@@ -816,6 +880,11 @@ function renderBoard() {
         unitEl.className = `grid-unit player-team star-${unit.star}`;
         if (template.isBuilding) unitEl.classList.add('building');
         
+        if (state.selectedSkillIndex !== -1 && !template.isBuilding) {
+            unitEl.style.boxShadow = '0 0 10px var(--gold)';
+            unitEl.style.borderColor = 'var(--gold)';
+        }
+        
         // CSS position translation mapping (left and top values)
         // col -> left, row -> top
         unitEl.style.left = `calc(${unit.x} * 100% / 8)`;
@@ -859,6 +928,14 @@ function selectBoardUnit(index) {
     }
 
     const clickedUnit = state.deployedUnits[index];
+
+    // Check if skill is selected in inventory
+    if (state.selectedSkillIndex !== -1) {
+        if (clickedUnit) {
+            equipSkillToUnit(clickedUnit);
+            return;
+        }
+    }
 
     // --- FUSION via click: bench unit selected + same character on field ---
     if (state.selectedEntity && state.selectedEntity.source === 'bench') {
@@ -908,6 +985,19 @@ function selectBoardUnit(index) {
 function handleCellClick(x, y) {
     if (state.gameState !== 'prep') return;
     restorePrepUI();
+    
+    // Check if skill is selected in inventory
+    if (state.selectedSkillIndex !== -1) {
+        const existingUnitIndex = state.deployedUnits.findIndex(u => u.x === x && u.y === y);
+        if (existingUnitIndex !== -1) {
+            const unit = state.deployedUnits[existingUnitIndex];
+            equipSkillToUnit(unit);
+            return;
+        } else {
+            addLog("請點擊戰場或儲備欄中的武將以裝備此戰法。", "damage");
+            return;
+        }
+    }
     
     // Only allow placing in player zone (y values 6 to 9)
     if (y < 6) {
@@ -968,7 +1058,8 @@ function handleCellClick(x, y) {
                 hpMax: stats.hpMax,
                 shield: 0,
                 energy: 0,
-                isBuilding: template.isBuilding
+                isBuilding: template.isBuilding,
+                equippedSkill: benchUnit.equippedSkill || null
             });
             
             state.selectedEntity = null;
@@ -1036,6 +1127,18 @@ function fuseUnits(benchIndex, boardIndex) {
     
     // Perform fusion!
     target.star++;
+    
+    // Skills merge logic
+    if (bUnit.equippedSkill) {
+        if (!target.equippedSkill) {
+            target.equippedSkill = bUnit.equippedSkill;
+            addLog(`已將被融合單位的戰法 [${bUnit.equippedSkill.name}] 繼承至升星後的 ${template.name}。`, 'system');
+        } else {
+            state.skillsInventory.push(bUnit.equippedSkill);
+            addLog(`由於目標已裝備戰法，被融合單位的戰法 [${bUnit.equippedSkill.name}] 已退回戰法倉庫。`, 'system');
+        }
+    }
+    
     state.bench[benchIndex] = null; // Clear duplicate
     
     // Scale up current stats
@@ -1064,6 +1167,18 @@ function fuseBoardUnits(srcBoardIndex, destBoardIndex) {
     
     // Perform fusion!
     target.star++;
+    
+    // Skills merge logic
+    if (src.equippedSkill) {
+        if (!target.equippedSkill) {
+            target.equippedSkill = src.equippedSkill;
+            addLog(`已將被融合單位的戰法 [${src.equippedSkill.name}] 繼承至升星後的 ${template.name}。`, 'system');
+        } else {
+            state.skillsInventory.push(src.equippedSkill);
+            addLog(`由於目標已裝備戰法，被融合單位的戰法 [${src.equippedSkill.name}] 已退回戰法倉庫。`, 'system');
+        }
+    }
+    
     state.deployedUnits.splice(srcBoardIndex, 1); // Delete source unit from board
     
     // Scale up stats
@@ -1137,26 +1252,76 @@ function showDetailCard(unit, allowUpgrade = true) {
     const elExtraSkillName = document.getElementById('detail-extra-skill-name');
     const elExtraSkillDesc = document.getElementById('detail-extra-skill-desc');
     
-    if (template.extraSkillName) {
-        elExtraSkillBox.style.display = 'block';
-        const type = template.extraSkillConfig?.type || 'passive';
+    elExtraSkillBox.style.display = 'block';
+    
+    if (unit.equippedSkill) {
+        const eqSkill = unit.equippedSkill;
+        const skillTpl = SKILL_TEMPLATES[eqSkill.id];
         let badgeClass = 'passive-type';
         let badgeText = '被動';
-        if (type === 'assault') {
-            badgeClass = 'assault-type';
-            badgeText = '突擊';
-        } else if (type === 'command' || type.startsWith('command')) {
-            badgeClass = 'command-type';
-            badgeText = '指揮';
-        } else if (type.startsWith('formation')) {
-            badgeClass = 'formation-type';
-            badgeText = '陣法';
-        }
+        if (eqSkill.type === 'active') { badgeClass = 'active-type'; badgeText = '主動'; }
+        else if (eqSkill.type === 'assault') { badgeClass = 'assault-type'; badgeText = '突擊'; }
+        else if (eqSkill.type === 'command') { badgeClass = 'command-type'; badgeText = '指揮'; }
         
-        elExtraSkillName.innerHTML = `${template.extraSkillName} <span class="skill-badge ${badgeClass}">${badgeText}</span> <span style="font-size:0.75rem;color:var(--text-secondary);">Lv.${unit.skillLevel}</span>`;
-        elExtraSkillDesc.textContent = getExtraSkillLevelDescription(template, unit.skillLevel);
+        elExtraSkillName.innerHTML = `${eqSkill.name} <span class="skill-badge ${badgeClass}">${badgeText}</span> <span style="font-size:0.75rem;color:var(--text-secondary);">Lv.${eqSkill.level}</span>`;
+        
+        const descText = skillTpl ? skillTpl.desc(eqSkill.level) : '';
+        const upgradeCost = eqSkill.cost * eqSkill.level;
+        const canUpgrade = eqSkill.level < 3;
+        
+        elExtraSkillDesc.innerHTML = `
+            <div>${descText}</div>
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                ${allowUpgrade && state.gameState === 'prep' ? `
+                <button class="btn btn-upgrade-equipped-skill" ${!canUpgrade ? 'disabled' : ''} style="padding: 2px 8px; font-size: 0.7rem; background: ${canUpgrade ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255,255,255,0.05)'}; border: 1px solid ${canUpgrade ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255,255,255,0.1)'}; color: ${canUpgrade ? 'var(--gold)' : 'var(--text-secondary)'}; border-radius: 4px; cursor: ${canUpgrade ? 'pointer' : 'default'};">
+                    ${canUpgrade ? `升級 (🪙 ${upgradeCost})` : '已滿級'}
+                </button>
+                <button class="btn btn-unequip-skill" style="padding: 2px 8px; font-size: 0.7rem; background: rgba(220, 53, 69, 0.2); border: 1px solid rgba(220, 53, 69, 0.4); color: #ff6b6b; border-radius: 4px; cursor: pointer;">卸載</button>
+                ` : ''}
+            </div>
+        `;
+        
+        if (allowUpgrade && state.gameState === 'prep') {
+            const btnUnequip = elExtraSkillDesc.querySelector('.btn-unequip-skill');
+            if (btnUnequip) {
+                btnUnequip.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    unequipSkill(unit);
+                });
+            }
+            
+            const btnUpgradeEquipped = elExtraSkillDesc.querySelector('.btn-upgrade-equipped-skill');
+            if (btnUpgradeEquipped && canUpgrade) {
+                btnUpgradeEquipped.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    if (state.gold < upgradeCost) {
+                        addLog(`金幣不足，無法升級戰法 [${eqSkill.name}]！需要：🪙 ${upgradeCost} 金幣。`, 'damage');
+                        return;
+                    }
+                    
+                    state.gold -= upgradeCost;
+                    eqSkill.level++;
+                    addLog(`✨ 戰法升級！[${eqSkill.name}] 已升至 Lv.${eqSkill.level}！`, 'victory');
+                    playSound('shield');
+                    
+                    showDetailCard(unit);
+                    updateUI();
+                });
+            }
+        }
     } else {
-        elExtraSkillBox.style.display = 'none';
+        elExtraSkillName.innerHTML = `<span style="color: var(--text-secondary); font-style: italic;">未學習第二戰法</span>`;
+        elExtraSkillDesc.innerHTML = `<div class="skill-slot-empty" style="border: 1px dashed rgba(255, 255, 255, 0.15); padding: 10px; border-radius: 6px; text-align: center; color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px; cursor: pointer;">[ 點擊此處 或 在下方戰法背包選中戰法，再點擊武將進行學習 ]</div>`;
+        
+        const placeholderBox = elExtraSkillDesc.querySelector('.skill-slot-empty');
+        if (placeholderBox && state.gameState === 'prep') {
+            placeholderBox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (elShopTabSkills) elShopTabSkills.click();
+                addLog('已為您切換至「戰法研習」分頁。請先在背包選中戰法（點擊選中），然後再點擊此將領（或戰場上的他）進行裝備。', 'system');
+            });
+        }
     }
     
     // Remove all previous action buttons
@@ -1436,6 +1601,9 @@ function handleOverlayAction() {
         state.round = 1;
         state.deployedUnits = [];
         state.bench = Array(8).fill(null);
+        state.skillsInventory = [];
+        state.skillsShopSlots = [null, null, null];
+        state.selectedSkillIndex = -1;
         elLogBody.innerHTML = '';
         addLog("舊檔案已清除。正在開啟新的徵程...", "system");
         startPrepPhase();
@@ -1955,7 +2123,8 @@ async function submitPvpReady() {
         star: u.star,
         skillLevel: u.skillLevel,
         x: u.x,
-        y: u.y
+        y: u.y,
+        equippedSkill: u.equippedSkill || null
     }));
     
     // Save start positions for post-battle restoration
@@ -2018,7 +2187,14 @@ function startPvpCombat(data) {
     if (data.isShadow) addLog('📢 無真實對手，已載入影子陣容。', 'system');
     
     // Upload our team as a shadow candidate for future matches
-    const myTeam = state.deployedUnits.map(u => ({ templateId: u.templateId, star: u.star, skillLevel: u.skillLevel, x: u.x, y: u.y }));
+    const myTeam = state.deployedUnits.map(u => ({
+        templateId: u.templateId,
+        star: u.star,
+        skillLevel: u.skillLevel,
+        x: u.x,
+        y: u.y,
+        equippedSkill: u.equippedSkill || null
+    }));
     fetch(`${API_BASE_URL}/api/pvp/upload`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ team: myTeam, playerId: state.pvpPlayerId, username: state.username || '主公' })
@@ -2133,6 +2309,9 @@ function resetGameToTitle() {
     pvpWaitingForReport    = false;
     state.deployedUnits    = [];
     state.bench            = Array(8).fill(null);
+    state.skillsInventory = [];
+    state.skillsShopSlots = [null, null, null];
+    state.selectedSkillIndex = -1;
     
     // Reset UI
     elOverlay.classList.add('hidden');
@@ -2447,5 +2626,247 @@ async function fetchLocalIp() {
     } catch (e) {
         console.warn("Failed to fetch local IP:", e);
     }
+}
+
+// ==========================================
+// SKILLS (戰法) SYSTEM LOGIC
+// ==========================================
+function rollSkillsShop(isManual = false) {
+    if (isManual) {
+        if (state.gold < 1) {
+            addLog('金幣不足，無法刷新戰法商店！', 'damage');
+            return;
+        }
+        state.gold -= 1;
+        playSound('heal');
+        addLog('已刷新戰法商店（消耗 1 金幣）。', 'system');
+    }
+    
+    // Draw 3 random skills
+    const keys = Object.keys(SKILL_TEMPLATES);
+    for (let i = 0; i < 3; i++) {
+        const randKey = keys[Math.floor(Math.random() * keys.length)];
+        state.skillsShopSlots[i] = SKILL_TEMPLATES[randKey];
+    }
+    
+    renderSkillsShop();
+    updateUI();
+}
+
+function renderSkillsShop() {
+    if (!elSkillsShopSlots) return;
+    elSkillsShopSlots.innerHTML = '';
+    
+    state.skillsShopSlots.forEach((skill, index) => {
+        const card = document.createElement('div');
+        if (!skill) {
+            card.className = 'skill-card sold-out';
+            card.innerHTML = `<div style="color: var(--text-secondary); font-style: italic; display: flex; height: 100%; align-items: center; justify-content: center; width: 100%;">已售罄</div>`;
+            elSkillsShopSlots.appendChild(card);
+            return;
+        }
+        
+        let typeLabel = '被動';
+        let typeClass = 'passive-type';
+        if (skill.type === 'active') { typeLabel = '主動'; typeClass = 'active-type'; }
+        else if (skill.type === 'assault') { typeLabel = '突擊'; typeClass = 'assault-type'; }
+        else if (skill.type === 'command') { typeLabel = '指揮'; typeClass = 'command-type'; }
+        
+        card.className = `skill-card cost-${skill.cost} glass`;
+        card.innerHTML = `
+            <div class="skill-card-header">
+                <span class="skill-card-name">${skill.name}</span>
+                <span class="skill-card-cost">🪙 ${skill.cost}</span>
+            </div>
+            <div class="skill-card-type">
+                <span class="skill-badge ${typeClass}">${typeLabel}</span>
+            </div>
+            <div class="skill-card-desc">${skill.desc(1)}</div>
+            <button class="btn-buy-skill">研習 (🪙 ${skill.cost})</button>
+        `;
+        
+        const buyBtn = card.querySelector('.btn-buy-skill');
+        buyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            buySkill(index);
+        });
+        
+        elSkillsShopSlots.appendChild(card);
+    });
+}
+
+function renderSkillsInventory() {
+    if (!elSkillsInventorySlots || !elSkillsInventoryCount) return;
+    
+    elSkillsInventoryCount.textContent = `數量: ${state.skillsInventory.length}`;
+    elSkillsInventorySlots.innerHTML = '';
+    
+    if (state.skillsInventory.length === 0) {
+        elSkillsInventorySlots.innerHTML = `<div style="grid-column: span 4; text-align: center; color: var(--text-secondary); font-size: 0.72rem; padding: 15px 0; font-style: italic;">戰法背包為空。請先在上方研習商店購買戰法。</div>`;
+        return;
+    }
+    
+    state.skillsInventory.forEach((inst, index) => {
+        const card = document.createElement('div');
+        const isSelected = state.selectedSkillIndex === index;
+        card.className = `inventory-card ${isSelected ? 'selected' : ''}`;
+        
+        let typeLabel = '被動';
+        if (inst.type === 'active') typeLabel = '主動';
+        else if (inst.type === 'assault') typeLabel = '突擊';
+        else if (inst.type === 'command') typeLabel = '指揮';
+        
+        const upgradeCost = inst.cost * inst.level;
+        const canUpgrade = inst.level < 3;
+        
+        card.innerHTML = `
+            <div class="inv-card-name" title="${inst.name}">${inst.name}</div>
+            <div class="inv-card-meta">
+                <span>Lv.${inst.level}</span>
+                <span>${typeLabel}</span>
+            </div>
+            <div class="inv-card-actions">
+                <button class="btn-inv-upgrade" ${!canUpgrade ? 'disabled' : ''}>
+                    ${canUpgrade ? `升級 🪙${upgradeCost}` : '滿級'}
+                </button>
+            </div>
+        `;
+        
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-inv-upgrade')) return;
+            
+            if (state.selectedSkillIndex === index) {
+                state.selectedSkillIndex = -1;
+                addLog('已取消選擇戰法。', 'system');
+            } else {
+                state.selectedSkillIndex = index;
+                addLog(`已選中戰法 [${inst.name}]。現在點擊戰場或儲備欄中的武將即可為其裝備。`, 'system');
+            }
+            renderSkillsInventory();
+            renderBench();
+            renderBoard();
+        });
+        
+        const btnUpgrade = card.querySelector('.btn-inv-upgrade');
+        if (btnUpgrade) {
+            btnUpgrade.addEventListener('click', (e) => {
+                e.stopPropagation();
+                upgradeSkill(index);
+            });
+        }
+        
+        elSkillsInventorySlots.appendChild(card);
+    });
+}
+
+function buySkill(shopIndex) {
+    if (state.gameState !== 'prep') return;
+    const skill = state.skillsShopSlots[shopIndex];
+    if (!skill) return;
+    
+    if (state.gold < skill.cost) {
+        addLog(`金幣不足，無法研習戰法 [${skill.name}]！`, 'damage');
+        return;
+    }
+    
+    state.gold -= skill.cost;
+    const skillInst = {
+        id: skill.id,
+        name: skill.name,
+        cost: skill.cost,
+        type: skill.type,
+        level: 1
+    };
+    
+    state.skillsInventory.push(skillInst);
+    state.skillsShopSlots[shopIndex] = null;
+    
+    addLog(`成功研習戰法 [${skill.name}]，已放入戰法倉庫！`, 'system');
+    playSound('heal');
+    
+    renderSkillsShop();
+    renderSkillsInventory();
+    updateUI();
+}
+
+function upgradeSkill(inventoryIndex) {
+    if (state.gameState !== 'prep') return;
+    const skill = state.skillsInventory[inventoryIndex];
+    if (!skill) return;
+    
+    if (skill.level >= 3) {
+        addLog(`戰法 [${skill.name}] 已經是最高等級（Lv.3）！`, 'damage');
+        return;
+    }
+    
+    const upgradeCost = skill.cost * skill.level;
+    if (state.gold < upgradeCost) {
+        addLog(`金幣不足，無法升級戰法 [${skill.name}]！需要：🪙 ${upgradeCost} 金幣。`, 'damage');
+        return;
+    }
+    
+    state.gold -= upgradeCost;
+    skill.level++;
+    addLog(`✨ 戰法升級！[${skill.name}] 已升至 Lv.${skill.level}！`, 'victory');
+    playSound('shield');
+    
+    renderSkillsInventory();
+    
+    const selected = getSelectedUnitData();
+    if (selected && selected.unit.equippedSkill && selected.unit.equippedSkill === skill) {
+        showDetailCard(selected.unit);
+    }
+    
+    updateUI();
+}
+
+function equipSkillToUnit(unit) {
+    if (state.gameState !== 'prep') return;
+    const skill = state.skillsInventory[state.selectedSkillIndex];
+    if (!skill) return;
+    
+    const template = UNIT_TEMPLATES[unit.templateId];
+    if (template.isBuilding) {
+        addLog("防禦建築無法裝備戰法！", "damage");
+        return;
+    }
+    
+    // If unit already has skill, swap it back to inventory
+    const oldSkill = unit.equippedSkill;
+    unit.equippedSkill = skill;
+    
+    state.skillsInventory.splice(state.selectedSkillIndex, 1);
+    if (oldSkill) {
+        state.skillsInventory.push(oldSkill);
+        addLog(`為 ${template.name} 裝備戰法 [${skill.name}]，原戰法 [${oldSkill.name}] 已退回倉庫。`, 'system');
+    } else {
+        addLog(`為 ${template.name} 裝備戰法 [${skill.name}]。`, 'system');
+    }
+    
+    state.selectedSkillIndex = -1;
+    playSound('heal');
+    
+    renderSkillsInventory();
+    renderBench();
+    renderBoard();
+    showDetailCard(unit);
+}
+
+function unequipSkill(unit) {
+    if (state.gameState !== 'prep') return;
+    const skill = unit.equippedSkill;
+    if (!skill) return;
+    
+    unit.equippedSkill = null;
+    state.skillsInventory.push(skill);
+    
+    const template = UNIT_TEMPLATES[unit.templateId];
+    addLog(`已為 ${template.name} 卸載戰法 [${skill.name}]，戰法已退回倉庫。`, 'system');
+    playSound('heal');
+    
+    renderSkillsInventory();
+    renderBench();
+    renderBoard();
+    showDetailCard(unit);
 }
 
