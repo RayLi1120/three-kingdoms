@@ -356,6 +356,7 @@ export function startPrepPhase() {
         u.hp = u.hpMax;
         u.shield = 0;
         u.energy = 0;
+        u.equippedSkillEnergy = 0;
         return true;
     });
     
@@ -930,6 +931,7 @@ function renderBoard() {
                 <div class="bar"><div class="bar-fill hp-fill" style="transform: scaleX(${unit.hp / unit.hpMax})"></div></div>
                 ${unit.shield > 0 ? `<div class="bar"><div class="bar-fill shield-fill" style="transform: scaleX(${unit.shield / unit.hpMax})"></div></div>` : ''}
                 ${!template.isBuilding ? `<div class="bar"><div class="bar-fill energy-fill" style="transform: scaleX(${unit.energy / 100})"></div></div>` : ''}
+                ${unit.equippedSkill && unit.equippedSkill.type === 'active' && !template.isBuilding ? `<div class="bar"><div class="bar-fill equipped-energy-fill" style="transform: scaleX(${(unit.equippedSkillEnergy || 0) / 100})"></div></div>` : ''}
             </div>
         `;
         // Add click handler — routes to selectBoardUnit which handles fusion + selection

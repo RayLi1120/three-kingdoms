@@ -895,6 +895,9 @@ body {
 .energy-fill {
     background-color: var(--purple);
 }
+.equipped-energy-fill {
+    background-color: #1D9E75;
+}
 
 /* Floating combat logs */
 .floating-number {

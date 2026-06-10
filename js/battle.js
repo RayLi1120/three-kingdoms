@@ -294,6 +294,7 @@ function createEnemy(templateId, x, y) {
         hpMax: Math.round(stats.hpMax * scaleFactor),
         shield: 0,
         energy: 0,
+        equippedSkillEnergy: 0,
         damageDealt: 0,
         damageTaken: 0,
         healingDone: 0,
@@ -429,6 +430,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             hpMax: stats.hpMax,
             shield: u.templateId === 'sentry_tower' ? currentRound * 100 : 0,
             energy: 0,
+            equippedSkillEnergy: 0,
             damageDealt: 0,
             damageTaken: 0,
             healingDone: 0,
@@ -578,6 +580,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 hpMax: stats.hpMax,
                 shield: 0,
                 energy: 0,
+                equippedSkillEnergy: 0,
                 damageDealt: 0,
                 damageTaken: 0,
                 healingDone: 0,
@@ -1198,6 +1201,7 @@ function combatTick() {
         if (!u.isBuilding) {
             const passiveEnergy = (u.stats.zhili || 0) * 0.015;
             u.energy = Math.min(100, u.energy + passiveEnergy);
+            u.equippedSkillEnergy = Math.min(100, (u.equippedSkillEnergy || 0) + passiveEnergy);
         }
         
         // Stun Check: stunned units skip actions
@@ -1269,6 +1273,11 @@ function combatTick() {
         // Skill execution at 100 energy
         if (u.energy >= 100) {
             castSkill(u);
+        }
+        // Equipped active skill fires on its own independent energy bar
+        if (u.equippedSkill && u.equippedSkill.type === 'active' && (u.equippedSkillEnergy || 0) >= 100) {
+            u.equippedSkillEnergy = 0;
+            executeEquippedActiveSkill(u);
         }
     });
     
@@ -1529,6 +1538,7 @@ function performAttack(attacker, target, now) {
             const liuBei = activeUnits.find(u => !u.isDead && u.team === attacker.team && u.templateId === 'liu_bei');
             if (liuBei) {
                 liuBei.energy = Math.min(100, liuBei.energy + 5);
+                liuBei.equippedSkillEnergy = Math.min(100, (liuBei.equippedSkillEnergy || 0) + 5);
                 createFloatingNumber(liuBei, '+5 能量', 'heal');
                 addLog(`💞 梟雄聯姻：孫尚香的普通攻擊使劉備額外獲得 5 點能量！`, 'skill');
             }
@@ -1578,9 +1588,11 @@ function performAttack(attacker, target, now) {
     
     if (!attacker.isBuilding) {
         attacker.energy = Math.min(attacker.energy + energyAttacker, 100);
+        attacker.equippedSkillEnergy = Math.min((attacker.equippedSkillEnergy || 0) + energyAttacker, 100);
     }
     if (!target.isBuilding) {
         target.energy = Math.min(target.energy + energyTarget, 100);
+        target.equippedSkillEnergy = Math.min((target.equippedSkillEnergy || 0) + energyTarget, 100);
     }
     
     // Fates / Synergies: Wu Commanders burn on attack & energy gain
@@ -1589,6 +1601,7 @@ function performAttack(attacker, target, now) {
         const isBurned = target.statusEffects.some(e => e.type === 'burn');
         if (isBurned) {
             attacker.energy = Math.min(100, attacker.energy + 10);
+            attacker.equippedSkillEnergy = Math.min(100, (attacker.equippedSkillEnergy || 0) + 10);
             addLog(`🔥 東吳大都督！${attacker.name} 攻擊已灼燒目標，額外恢復 10 點能量！`, 'skill');
         } else if (Math.random() < 0.40) {
             const burnDmg = Math.round(attacker.stats.zhili * 0.25);
@@ -2783,10 +2796,6 @@ function castSkill(unit) {
         addLog(`🔮 天水奇謀！${unit.name} 施放主動戰法，額外獲得 10 點能量！`, 'skill');
     }
 
-    // Custom Equippable Active Skill trigger
-    if (unit.equippedSkill && unit.equippedSkill.type === 'active') {
-        executeEquippedActiveSkill(unit);
-    }
 }
 
 function executeEquippedActiveSkill(unit) {
