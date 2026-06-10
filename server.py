@@ -23,9 +23,7 @@ shadow_pool = [
         "team": [
             {"templateId": "liu_bei", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
             {"templateId": "guan_yu", "star": 2, "skillLevel": 2, "x": 4, "y": 7},
-            {"templateId": "zhang_fei", "star": 2, "skillLevel": 2, "x": 2, "y": 6},
-            {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 3, "y": 6},
-            {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 4, "y": 6}
+            {"templateId": "zhang_fei", "star": 2, "skillLevel": 2, "x": 2, "y": 6}
         ]
     },
     # Preset Team 2: Wei Intellects
@@ -35,9 +33,7 @@ shadow_pool = [
         "team": [
             {"templateId": "cao_cao", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
             {"templateId": "guo_jia", "star": 2, "skillLevel": 2, "x": 2, "y": 8},
-            {"templateId": "xun_yu", "star": 2, "skillLevel": 2, "x": 5, "y": 8},
-            {"templateId": "ballista_tower", "star": 1, "skillLevel": 1, "x": 1, "y": 8},
-            {"templateId": "ballista_tower", "star": 1, "skillLevel": 1, "x": 6, "y": 8}
+            {"templateId": "xun_yu", "star": 2, "skillLevel": 2, "x": 5, "y": 8}
         ]
     },
     # Preset Team 3: East Wu Commanders
@@ -47,8 +43,7 @@ shadow_pool = [
         "team": [
             {"templateId": "sun_quan", "star": 2, "skillLevel": 2, "x": 3, "y": 7},
             {"templateId": "zhou_yu", "star": 2, "skillLevel": 2, "x": 2, "y": 8},
-            {"templateId": "lu_xun", "star": 2, "skillLevel": 2, "x": 4, "y": 8},
-            {"templateId": "sentry_tower", "star": 1, "skillLevel": 1, "x": 3, "y": 6}
+            {"templateId": "lu_xun", "star": 2, "skillLevel": 2, "x": 4, "y": 8}
         ]
     },
     # Preset Team 4: Yellow Turban

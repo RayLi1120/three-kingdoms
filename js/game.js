@@ -4,8 +4,8 @@
  * duplicate fusion, skill upgrades, and round progression.
  */
 
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js?v=16';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=16';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js?v=17';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=17';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -455,8 +455,7 @@ function upgradeMaxDeployCost() {
 // ==========================================
 function rollShop() {
     const pool = [
-        { id: 'sentry_tower', weight: 15 },
-        { id: 'ballista_tower', weight: 15 },
+
         // 3-Cost (weight 8)
         { id: 'zhao_yun', weight: 8 },
         { id: 'liu_bei', weight: 8 },

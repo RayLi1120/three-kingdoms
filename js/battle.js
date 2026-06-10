@@ -1,4 +1,4 @@
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js?v=16';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js?v=17';
 
 // Local references to game state and callbacks to avoid circular imports
 let logCallback = null;
@@ -670,15 +670,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
         });
     }
 
-    // Apply Sentry Tower shield at start of combat
-    activeUnits.forEach(unit => {
-        if (unit.templateId === 'sentry_tower') {
-            const shieldAmt = currentRound * 100;
-            unit.shield = shieldAmt;
-            unit.statusEffects.push({ type: 'shield_dur', val: shieldAmt, expiry: Date.now() + 999999 });
-            addLog(`🛡️ ${unit.team === 'player' ? '己方' : '敵方'}哨塔觸發 [堅石守禦]！獲得了 ${shieldAmt} 點防禦護盾。`, 'system');
-        }
-    });
+
 
     // Apply 暫避其鋒 (Zanbi Qifeng) Command buff
     ['player', 'enemy'].forEach(teamName => {
@@ -1269,9 +1261,7 @@ function performAttack(attacker, target, now) {
         damage = Math.round(damage * 1.20);
     }
     
-    if (attacker.templateId === 'ballista_tower') {
-        damage = attacker.stats.wuli; // Heavy bolt
-    }
+
     
     // Roll for Critical Hit
     let isCrit = false;
@@ -1295,17 +1285,7 @@ function performAttack(attacker, target, now) {
     // Apply damage to target
     takeDamage(target, damage, 'attack', attacker, isCrit);
 
-    // Apply Ballista Tower defense shred on attack
-    if (attacker.templateId === 'ballista_tower') {
-        const currentShred = target.statusEffects.find(e => e.type === 'shred');
-        const stacks = currentShred ? (currentShred.stacks || 1) : 0;
-        if (stacks < 3) {
-            const newStacks = stacks + 1;
-            applyStatusEffect(target, 'shred', 1, 5000, { stacks: newStacks });
-            createFloatingNumber(target, `破防 x${newStacks}`, 'dmg');
-            addLog(`🏹 弓弩塔發射穿甲巨矢！使 ${target.name} 破防（疊加 ${newStacks} 層）。`, 'system');
-        }
-    }
+
     
     // Lu Bu Splash damage
     const rageBuff = attacker.statusEffects.find(e => e.type === 'lu_bu_rage');

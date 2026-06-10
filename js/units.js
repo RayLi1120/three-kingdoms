@@ -890,50 +890,7 @@ export const UNIT_TEMPLATES = {
         }
     },
 
-    // ==========================================
-    // BUILDINGS (Static units placed by player)
-    // ==========================================
-    sentry_tower: {
-        id: 'sentry_tower',
-        name: '哨塔',
-        role: '防禦障礙',
-        faction: 'building',
-        cost: 2,
-        hp: 1600,
-        wuli: 0,
-        zhili: 0,
-        tongshuai: 150,
-        atkSpeed: 0,
-        range: 0,
-        isBuilding: true,
-        portrait: 'assets/sentry_tower.jpg',
-        avatarText: '哨',
-        color: '#64748b', // Slate Gray
-        skillName: '堅石守禦',
-        skillDesc: '靜態障礙物。阻擋敵人移動。無法攻擊。放置在前排可吸引敵方仇恨。戰鬥開始時獲得防禦護盾（隨關卡回合數成長）。',
-        skillConfig: null
-    },
-    
-    ballista_tower: {
-        id: 'ballista_tower',
-        name: '弓弩塔',
-        role: '遠程防禦塔',
-        faction: 'building',
-        cost: 3,
-        hp: 650,
-        wuli: 85,
-        zhili: 0,
-        tongshuai: 60,
-        atkSpeed: 1.4,
-        range: 6,
-        isBuilding: true,
-        portrait: 'assets/ballista_tower.jpg',
-        avatarText: '弩',
-        color: '#2ed573', // Green
-        skillName: '穿甲巨矢',
-        skillDesc: '靜態防禦塔。快速向遠處敵人發射重型鋼弩。普通攻擊會額外削減目標10%防禦（最多疊加3層）。',
-        skillConfig: null
-    },
+
 
     // ==========================================
     // SUMMONS
