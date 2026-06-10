@@ -4,8 +4,8 @@
  * duplicate fusion, skill upgrades, and round progression.
  */
 
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js?v=16';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=16';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -457,6 +457,7 @@ function rollShop() {
     const pool = [
         { id: 'sentry_tower', weight: 15 },
         { id: 'ballista_tower', weight: 15 },
+        // 3-Cost (weight 8)
         { id: 'zhao_yun', weight: 8 },
         { id: 'liu_bei', weight: 8 },
         { id: 'guo_jia', weight: 8 },
@@ -464,12 +465,22 @@ function rollShop() {
         { id: 'yuan_shao', weight: 8 },
         { id: 'yuan_shu', weight: 8 },
         { id: 'diao_chan', weight: 8 },
+        { id: 'cheng_yu', weight: 8 },
+        { id: 'lu_su', weight: 8 },
+        // 4-Cost (weight 6)
         { id: 'zhuge_liang', weight: 6 },
         { id: 'zhang_fei', weight: 6 },
         { id: 'cao_cao', weight: 6 },
         { id: 'sun_quan', weight: 6 },
         { id: 'lu_xun', weight: 6 },
         { id: 'zhang_jiao', weight: 6 },
+        { id: 'jiang_wei', weight: 6 },
+        { id: 'ma_chao', weight: 6 },
+        { id: 'pang_tong', weight: 6 },
+        { id: 'jia_xu', weight: 6 },
+        { id: 'sun_shangxiang', weight: 6 },
+        { id: 'tai_shici', weight: 6 },
+        // 5-Cost (weight 4 for Guan/Zhou, weight 3 for Sima/Lu)
         { id: 'guan_yu', weight: 4 },
         { id: 'zhou_yu', weight: 4 },
         { id: 'sima_yi', weight: 3 },
@@ -1450,8 +1461,9 @@ export function checkActiveFates() {
     // Check each fate template
     for (const key in FATE_TEMPLATES) {
         const fate = FATE_TEMPLATES[key];
-        const hasAll = fate.requiredIds.every(id => deployedIds.has(id));
-        if (hasAll) {
+        const minNeeded = fate.minCount || fate.requiredIds.length;
+        const matchingCount = fate.requiredIds.filter(id => deployedIds.has(id)).length;
+        if (matchingCount >= minNeeded) {
             state.activeFates.push(fate.id);
         }
     }
@@ -1544,8 +1556,8 @@ function renderActiveFatesUI() {
         
         // Count how many required units are deployed
         const matchCount = fate.requiredIds.filter(id => deployedIds.has(id)).length;
-        const totalReq = fate.requiredIds.length;
-        const isActive = matchCount === totalReq;
+        const minNeeded = fate.minCount || fate.requiredIds.length;
+        const isActive = matchCount >= minNeeded;
         
         if (matchCount > 0) {
             activeCount++;
@@ -1557,7 +1569,7 @@ function renderActiveFatesUI() {
             item.innerHTML = `
                 <div class="synergy-item-header">
                     <span class="synergy-item-name">${fate.name}</span>
-                    <span class="synergy-item-progress">${matchCount}/${totalReq}</span>
+                    <span class="synergy-item-progress">${matchCount}/${minNeeded}</span>
                 </div>
                 <div class="synergy-item-desc">${fate.desc}</div>
             `;

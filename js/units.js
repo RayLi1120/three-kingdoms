@@ -121,7 +121,7 @@ export const UNIT_TEMPLATES = {
         faction: 'shu',
         cost: 3,
         hp: 680,
-        wuli: 110,
+        wuli: 100,
         zhili: 35,
         tongshuai: 80,
         atkSpeed: 1.2,
@@ -141,11 +141,11 @@ export const UNIT_TEMPLATES = {
             durationSec: 5
         },
         extraSkillName: '一身是膽',
-        extraSkillDesc: '被動：戰鬥中自身獲得洞察狀態（免疫所有控制效果），並提升30點武力和30點統率。',
+        extraSkillDesc: '被動：戰鬥中自身獲得洞察狀態（免疫所有控制效果），並提升25點武力和25點統率。',
         extraSkillConfig: {
             type: 'passive_cc_immunity',
-            wuliBuff: 30,
-            tongshuaiBuff: 30
+            wuliBuff: 25,
+            tongshuaiBuff: 25
         }
     },
 
@@ -222,6 +222,112 @@ export const UNIT_TEMPLATES = {
         }
     },
 
+    jiang_wei: {
+        id: 'jiang_wei',
+        name: '姜維',
+        role: '中排輸出 / 屬性削減',
+        faction: 'shu',
+        cost: 4,
+        hp: 720,
+        wuli: 90,
+        zhili: 95,
+        tongshuai: 82,
+        atkSpeed: 1.0,
+        range: 3,
+        isBuilding: false,
+        portrait: 'assets/jiang_wei.png',
+        avatarText: '維',
+        color: '#2ed573',
+        skillName: '義膽雄心',
+        skillDesc: '主動：奇數次施放造成180%武力的物理傷害並降低目標20%武力；偶數次施放造成180%智力的謀略傷害並降低目標20%智力。屬性降低持續4秒。',
+        skillConfig: {
+            type: 'jiang_wei_multi',
+            energyMax: 100,
+            dmgMult: 1.8,
+            debuffPct: 0.20,
+            durationSec: 4
+        },
+        extraSkillName: '文武雙全',
+        extraSkillDesc: '被動：自身每次造成傷害時，提升3%武力與智力，最多疊加5層。',
+        extraSkillConfig: {
+            type: 'passive_ramp_stats',
+            buffPerStack: 0.03,
+            maxStacks: 5
+        }
+    },
+
+    ma_chao: {
+        id: 'ma_chao',
+        name: '馬超',
+        role: '前排群攻 / 突擊型輸出',
+        faction: 'shu',
+        cost: 4,
+        hp: 780,
+        wuli: 108,
+        zhili: 20,
+        tongshuai: 78,
+        atkSpeed: 1.15,
+        range: 1,
+        isBuilding: false,
+        portrait: 'assets/ma_chao.png',
+        avatarText: '超',
+        color: '#2ed573',
+        skillName: '槊血作氣',
+        skillDesc: '主動：自身獲得50%武力提升，且普通攻擊對周圍相鄰敵人造成60%的濺射傷害，持續5秒。',
+        skillConfig: {
+            type: 'ma_chao_buff',
+            energyMax: 100,
+            wuliBuff: 0.50,
+            splashPct: 0.60,
+            durationSec: 5
+        },
+        extraSkillName: '一騎當千',
+        extraSkillDesc: '突擊（35%）：普通攻擊後，對目標及周圍2格範圍內的所有敵人造成100%武力的物理傷害。',
+        extraSkillConfig: {
+            type: 'assault',
+            chance: 0.35,
+            dmgMult: 1.0,
+            dmgType: 'physical',
+            radius: 2
+        }
+    },
+
+    pang_tong: {
+        id: 'pang_tong',
+        name: '龐統',
+        role: '後排法師 / 鏈接傳導',
+        faction: 'shu',
+        cost: 4,
+        hp: 600,
+        wuli: 25,
+        zhili: 116,
+        tongshuai: 62,
+        atkSpeed: 0.85,
+        range: 4,
+        isBuilding: false,
+        portrait: 'assets/pang_tong.png',
+        avatarText: '統',
+        color: '#2ed573',
+        skillName: '連環計',
+        skillDesc: '主動：將隨機3名敵軍鏈接在一起，持續6秒。當其中任意一人受到傷害時，其他被鏈接的敵人亦受到該傷害的30%（傳導真實傷害）。',
+        skillConfig: {
+            type: 'pang_tong_chain',
+            energyMax: 100,
+            targetCount: 3,
+            sharePct: 0.30,
+            durationSec: 6
+        },
+        extraSkillName: '士別三日',
+        extraSkillDesc: '被動：戰鬥開始的前4秒內無法進行普通攻擊（繳械），但獲得40%規避（閃避）率；戰鬥第5秒時，對所有敵軍造成300%智力謀略傷害。',
+        extraSkillConfig: {
+            type: 'passive_shibie',
+            disarmDurationSec: 4,
+            dodgeBuff: 0.40,
+            explodeTime: 5,
+            explodeDmgMult: 3.0
+        }
+    },
+
     guo_jia: {
         id: 'guo_jia',
         name: '郭嘉',
@@ -289,6 +395,78 @@ export const UNIT_TEMPLATES = {
         }
     },
 
+    jia_xu: {
+        id: 'jia_xu',
+        name: '賈詡',
+        role: '後排謀士 / 混亂控制',
+        faction: 'wei',
+        cost: 4,
+        hp: 620,
+        wuli: 22,
+        zhili: 114,
+        tongshuai: 68,
+        atkSpeed: 0.9,
+        range: 4,
+        isBuilding: false,
+        portrait: 'assets/jia_xu.png',
+        avatarText: '詡',
+        color: '#54a0ff',
+        skillName: '神機莫測',
+        skillDesc: '主動：使隨機2名敵軍混亂3秒，並使己方混亂的隊友恢復120%智力生命值。若目標已被混亂，則改為對其造成220%智力謀略傷害。',
+        skillConfig: {
+            type: 'jia_xu_confusion',
+            energyMax: 100,
+            targetCount: 2,
+            confuseDurationSec: 3.0,
+            healMult: 1.2,
+            dmgMult: 2.2
+        },
+        extraSkillName: '暫避其鋒',
+        extraSkillDesc: '指揮：戰鬥開始前5秒，使己方智力最高單體獲得40%物理免傷，武力最高單體獲得40%魔法免傷。',
+        extraSkillConfig: {
+            type: 'command_zanbi',
+            durationSec: 5,
+            physReduc: 0.40,
+            magicReduc: 0.40
+        }
+    },
+
+    cheng_yu: {
+        id: 'cheng_yu',
+        name: '程昱',
+        role: '後排法師 / 禁療真實傷害',
+        faction: 'wei',
+        cost: 3,
+        hp: 560,
+        wuli: 24,
+        zhili: 106,
+        tongshuai: 56,
+        atkSpeed: 0.85,
+        range: 4,
+        isBuilding: false,
+        portrait: 'assets/cheng_yu.png',
+        avatarText: '昱',
+        color: '#54a0ff',
+        skillName: '十面埋伏',
+        skillDesc: '主動：對所有身上有負面狀態的敵軍造成180%智力謀略傷害，並對其施加禁療與逃兵狀態（每秒造成40%智力的真實傷害，持續4秒）。',
+        skillConfig: {
+            type: 'cheng_yu_ambush',
+            energyMax: 100,
+            dmgMult: 1.8,
+            dotMult: 0.40,
+            durationSec: 4
+        },
+        extraSkillName: '四面楚歌',
+        extraSkillDesc: '指揮：每5秒隨機使2名敵軍中毒，每秒造成30%智力謀略傷害，持續3秒。',
+        extraSkillConfig: {
+            type: 'command_poison',
+            intervalSec: 5,
+            targetCount: 2,
+            dotMult: 0.30,
+            durationSec: 3
+        }
+    },
+
     sun_quan: {
         id: 'sun_quan',
         name: '孫權',
@@ -330,9 +508,9 @@ export const UNIT_TEMPLATES = {
         role: '後排群攻灼燒輸出',
         faction: 'wu',
         cost: 5,
-        hp: 580,
+        hp: 650,
         wuli: 35,
-        zhili: 125,
+        zhili: 130,
         tongshuai: 75,
         atkSpeed: 0.95,
         range: 4,
@@ -341,19 +519,19 @@ export const UNIT_TEMPLATES = {
         avatarText: '瑜',
         color: '#ff6b6b', // Wu Red
         skillName: '神火計',
-        skillDesc: '對所有敵軍造成180%智力謀略傷害，並有100%概率對其施加灼燒狀態，每秒造成15%智力的謀略傷害，持續5秒。',
+        skillDesc: '對所有敵軍造成200%智力謀略傷害，並有100%概率對其施加灼燒狀態，每秒造成20%智力的謀略傷害，持續5秒。',
         skillConfig: {
             type: 'zhou_yu_fire',
             energyMax: 100,
-            dmgMult: 1.8,
-            burnMult: 0.15,
+            dmgMult: 2.0,
+            burnMult: 0.20,
             durationSec: 5
         },
         extraSkillName: '奪魂挾魄',
-        extraSkillDesc: '被動：每次成功發動戰法時，有50%幾率奪取目標15%的武力、智力和統率屬性，持續4秒。',
+        extraSkillDesc: '被動：每次成功發動戰法時，有60%幾率奪取目標15%的武力、智力和統率屬性，持續4秒。',
         extraSkillConfig: {
             type: 'passive_stat_steal',
-            chance: 0.50,
+            chance: 0.60,
             stealPct: 0.15,
             durationSec: 4
         }
@@ -365,9 +543,9 @@ export const UNIT_TEMPLATES = {
         role: '後排法師 / 爆發',
         faction: 'wu',
         cost: 4,
-        hp: 600,
+        hp: 680,
         wuli: 30,
-        zhili: 115,
+        zhili: 120,
         tongshuai: 70,
         atkSpeed: 0.9,
         range: 4,
@@ -376,22 +554,126 @@ export const UNIT_TEMPLATES = {
         avatarText: '遜',
         color: '#ff6b6b', // Wu Red
         skillName: '火燒連營',
-        skillDesc: '對處於灼燒狀態的敵人造成280%智力謀略傷害，並觸發爆炸造成140%智力謀略傷害，將灼燒擴散至相鄰敵人。',
+        skillDesc: '對處於灼燒狀態的敵人造成300%智力謀略傷害，並觸發爆炸造成150%智力謀略傷害，將灼燒擴散至相鄰敵人。',
         skillConfig: {
             type: 'lu_xun_explode',
             energyMax: 100,
-            targetDmgMult: 2.8,
-            splashDmgMult: 1.4
+            targetDmgMult: 3.0,
+            splashDmgMult: 1.5
         },
         extraSkillName: '克敵制勝',
-        extraSkillDesc: '突擊（30%）：普通攻擊後，對目標造成160%智力謀略傷害。若目標處於灼燒狀態，則有40%幾率使其震懾1.5秒。',
+        extraSkillDesc: '突擊（30%）：普通攻擊後，對目標造成180%智力謀略傷害。若目標處於灼燒狀態，則有40%幾率使其震懾1.5秒。',
         extraSkillConfig: {
             type: 'assault',
             chance: 0.30,
-            dmgMult: 1.6,
+            dmgMult: 1.8,
             dmgType: 'magic',
             stunChance: 0.40,
             stunDurationSec: 1.5
+        }
+    },
+
+    lu_su: {
+        id: 'lu_su',
+        name: '魯肅',
+        role: '後排輔助 / 屬性轉移',
+        faction: 'wu',
+        cost: 3,
+        hp: 620,
+        wuli: 28,
+        zhili: 108,
+        tongshuai: 72,
+        atkSpeed: 0.95,
+        range: 3,
+        isBuilding: false,
+        portrait: 'assets/lu_su.png',
+        avatarText: '肅',
+        color: '#ff6b6b',
+        skillName: '濟貧難施',
+        skillDesc: '主動：為生命值百分比最低的友軍恢復180%智力的生命值，並將自身30%的屬性移交給該友軍，持續5秒。',
+        skillConfig: {
+            type: 'lu_su_transfer',
+            energyMax: 100,
+            healMult: 1.8,
+            transferPct: 0.30,
+            durationSec: 5
+        },
+        extraSkillName: '八門金鎖陣',
+        extraSkillDesc: '指揮：戰鬥開始前5秒，降低敵軍武力最高的2人35%造成的傷害。',
+        extraSkillConfig: {
+            type: 'command_bamen',
+            durationSec: 5,
+            dmgDealtReduc: 0.35
+        }
+    },
+
+    sun_shangxiang: {
+        id: 'sun_shangxiang',
+        name: '孫尚香',
+        role: '後排突擊 / 增益加成',
+        faction: 'wu',
+        cost: 4,
+        hp: 700,
+        wuli: 98,
+        zhili: 60,
+        tongshuai: 68,
+        atkSpeed: 1.1,
+        range: 3,
+        isBuilding: false,
+        portrait: 'assets/sun_shangxiang.png',
+        avatarText: '香',
+        color: '#ff6b6b',
+        skillName: '弓腰姬',
+        skillDesc: '主動：對目標造成180%武力物理傷害。若自身擁有活性增益狀態，則每多一個增益，技能傷害提升20%並恢復等同於100%智力的生命值。',
+        skillConfig: {
+            type: 'sun_shangxiang_gongyao',
+            energyMax: 100,
+            dmgMult: 1.8,
+            bonusDmgPerBuff: 0.20,
+            healMult: 1.0
+        },
+        extraSkillName: '強攻',
+        extraSkillDesc: '突擊（35%）：普通攻擊後，使自身獲得連擊狀態（每次普攻發動兩次攻擊），持續3秒。',
+        extraSkillConfig: {
+            type: 'assault',
+            chance: 0.35,
+            buffType: 'double_attack',
+            durationSec: 3
+        }
+    },
+
+    tai_shici: {
+        id: 'tai_shici',
+        name: '太史慈',
+        role: '中排射手 / 護盾削減',
+        faction: 'wu',
+        cost: 4,
+        hp: 740,
+        wuli: 102,
+        zhili: 35,
+        tongshuai: 74,
+        atkSpeed: 1.1,
+        range: 3,
+        isBuilding: false,
+        portrait: 'assets/tai_shici.png',
+        avatarText: '慈',
+        color: '#ff6b6b',
+        skillName: '神射',
+        skillDesc: '主動：普通攻擊改為發動連擊（每次攻擊造成2次傷害），並每次攻擊降低目標10%統率（可疊加5層），持續5秒。',
+        skillConfig: {
+            type: 'tai_shici_shenshe',
+            energyMax: 100,
+            defShred: 0.10,
+            maxStacks: 5,
+            durationSec: 5
+        },
+        extraSkillName: '折衝禦侮',
+        extraSkillDesc: '突擊（35%）：普通攻擊後，降低目標20%智力與統率，持續3秒，並使我軍防禦（統率）最低的友軍獲得格擋狀態，持續3秒。',
+        extraSkillConfig: {
+            type: 'assault',
+            chance: 0.35,
+            debuffPct: 0.20,
+            shieldDurationSec: 3
         }
     },
 
@@ -482,12 +764,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '術',
         color: '#eccc68', // Qun Yellow
         skillName: '偽帝登基',
-        skillDesc: '自身武力與智力屬性提升80%，持續5秒，但每秒扣除自身當前生命值的15%。',
+        skillDesc: '自身武力與智力屬性提升80%，持續5秒，但每秒扣除自身當前生命值的12%。',
         skillConfig: {
             type: 'yuan_shu_sacrifice',
             energyMax: 100,
             statBuffPct: 0.80,
-            hpDrainPct: 0.15,
+            hpDrainPct: 0.12,
             durationSec: 5
         },
         extraSkillName: '手起刀落',
@@ -808,14 +1090,14 @@ export const FATE_TEMPLATES = {
     wei_intellects: {
         id: 'wei_intellects',
         name: '魏之智',
-        requiredIds: ['cao_cao', 'guo_jia', 'xun_yu'],
-        desc: '三人均獲得+20%智力，且發動主動戰法的能量獲取速度提升25%。'
+        requiredIds: ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'],
+        desc: '四人均獲得+30%智力與+20%奇謀（法術暴擊）幾率，戰鬥開始時直接獲得50點能量。'
     },
     wu_commander: {
         id: 'wu_commander',
         name: '東吳大都督',
-        requiredIds: ['sun_quan', 'zhou_yu', 'lu_xun'],
-        desc: '三人均獲得+20%攻擊速度。普通攻擊有40%幾率使目標陷入灼燒狀態，每秒造成25%智力的謀略傷害，持續3秒。'
+        requiredIds: ['zhou_yu', 'lu_xun', 'lu_su'],
+        desc: '獲得+20%智力與+20%攻擊速度。普通攻擊有40%幾率對目標施加灼燒（每秒25%智力傷害，持續3秒）；若目標已處於灼燒狀態，則攻擊者恢復10點能量。'
     },
     yellow_turban: {
         id: 'yellow_turban',
@@ -828,6 +1110,31 @@ export const FATE_TEMPLATES = {
         name: '英雄美人',
         requiredIds: ['lu_bu', 'diao_chan'],
         desc: '呂布獲得+25%武力。貂蟬獲得+25%最大生命值。貂蟬魅惑敵軍時，呂布會繼承目標50%的屬性。'
+    },
+    five_tigers: {
+        id: 'five_tigers',
+        name: '五虎上將',
+        requiredIds: ['guan_yu', 'zhang_fei', 'zhao_yun', 'ma_chao'],
+        minCount: 3,
+        desc: '上陣其中任意 3 人即可激活。獲得+20%武力與+20%攻擊速度。普通攻擊有25%幾率使目標震懾1秒。'
+    },
+    tianshui_miracle: {
+        id: 'tianshui_miracle',
+        name: '天水奇謀',
+        requiredIds: ['zhuge_liang', 'zhao_yun', 'jiang_wei'],
+        desc: '獲得+20%武力與+20%智力。當釋放主動戰法時，額外獲得10點能量。'
+    },
+    pillars_state: {
+        id: 'pillars_state',
+        name: '國之棟樑',
+        requiredIds: ['sima_yi', 'zhou_yu', 'zhuge_liang'],
+        desc: '獲得+25%智力與+15%統率。戰鬥開始時，直接獲得40點能量。'
+    },
+    wei_dynasty: {
+        id: 'wei_dynasty',
+        name: '魏武之世',
+        requiredIds: ['cao_cao', 'sima_yi'],
+        desc: '獲得+25%最大生命值與+20%統率防禦。雙方互相分攤並恢復對方造成傷害量20%的生命值。'
     }
 };
 
