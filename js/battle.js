@@ -390,9 +390,14 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 stats.hpMax = Math.round(stats.hpMax * 1.25);
             }
         }
-        if (activeFates.includes('royal_marriage') && ['liu_bei', 'sun_shangxiang'].includes(u.templateId)) {
-            stats.hpMax = Math.round(stats.hpMax * 1.20);
-            stats.wuli = Math.round(stats.wuli * 1.20);
+        if (activeFates.includes('royal_marriage')) {
+            if (u.templateId === 'liu_bei') {
+                stats.hpMax = Math.round(stats.hpMax * 1.20);
+                stats.zhili = Math.round(stats.zhili * 1.20);
+            } else if (u.templateId === 'sun_shangxiang') {
+                stats.hpMax = Math.round(stats.hpMax * 1.20);
+                stats.wuli = Math.round(stats.wuli * 1.20);
+            }
         }
         if (activeFates.includes('five_tigers') && ['guan_yu', 'zhang_fei', 'zhao_yun', 'ma_chao'].includes(u.templateId)) {
             stats.wuli = Math.round(stats.wuli * 1.20);
@@ -530,9 +535,14 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                     stats.hpMax = Math.round(stats.hpMax * 1.25);
                 }
             }
-            if (oppActiveFates.includes('royal_marriage') && ['liu_bei', 'sun_shangxiang'].includes(u.templateId)) {
-                stats.hpMax = Math.round(stats.hpMax * 1.20);
-                stats.wuli = Math.round(stats.wuli * 1.20);
+            if (oppActiveFates.includes('royal_marriage')) {
+                if (u.templateId === 'liu_bei') {
+                    stats.hpMax = Math.round(stats.hpMax * 1.20);
+                    stats.zhili = Math.round(stats.zhili * 1.20);
+                } else if (u.templateId === 'sun_shangxiang') {
+                    stats.hpMax = Math.round(stats.hpMax * 1.20);
+                    stats.wuli = Math.round(stats.wuli * 1.20);
+                }
             }
             if (oppActiveFates.includes('five_tigers') && ['guan_yu', 'zhang_fei', 'zhao_yun', 'ma_chao'].includes(u.templateId)) {
                 stats.wuli = Math.round(stats.wuli * 1.20);
@@ -903,11 +913,11 @@ function combatTick() {
                 u.lastYongWuTime = now;
                 u.yongWuCount = 0;
             }
-            if (now - u.lastYongWuTime >= 4000) {
+            if (now - u.lastYongWuTime >= 5000) {
                 u.lastYongWuTime = now;
                 u.yongWuCount = Math.min(u.yongWuCount + 1, 4);
-                const multipliers = [1.0, 1.5, 2.0, 2.5];
-                const mult = multipliers[u.yongWuCount - 1] || 2.5;
+                const multipliers = [0.8, 1.2, 1.6, 2.0];
+                const mult = multipliers[u.yongWuCount - 1] || 2.0;
                 
                 const enemies = activeUnits.filter(other => !other.isDead && other.team !== u.team);
                 if (enemies.length > 0) {
@@ -1138,18 +1148,18 @@ function combatTick() {
             activeUnits.forEach(other => {
                 if (!other.isDead && other.templateId === 'sima_yi') {
                     if (!other.simaYiDeathsCount) other.simaYiDeathsCount = 0;
-                    if (other.simaYiDeathsCount < 8) {
+                    if (other.simaYiDeathsCount < 6) {
                         other.simaYiDeathsCount++;
-                        other.stats.wuli = Math.round(other.stats.wuli * 1.10);
-                        other.stats.zhili = Math.round(other.stats.zhili * 1.10);
-                        other.stats.tongshuai = Math.round(other.stats.tongshuai * 1.10);
+                        other.stats.wuli = Math.round(other.stats.wuli * 1.05);
+                        other.stats.zhili = Math.round(other.stats.zhili * 1.05);
+                        other.stats.tongshuai = Math.round(other.stats.tongshuai * 1.05);
                         
-                        const hpBonus = Math.round(other.hpMax * 0.10);
+                        const hpBonus = Math.round(other.hpMax * 0.05);
                         other.hpMax += hpBonus;
                         other.hp += hpBonus;
                         
                         createFloatingNumber(other, '吸魂', 'heal');
-                        addLog(`🦅 司馬懿吸取敗將之魂！疊加層數: ${other.simaYiDeathsCount}/8（全屬性增加 10%）`, 'skill');
+                        addLog(`🦅 司馬懿吸取敗將之魂！疊加層數: ${other.simaYiDeathsCount}/6（全屬性增加 5%）`, 'skill');
                     }
                 }
             });
@@ -1183,6 +1193,12 @@ function combatTick() {
     // 3. Process each unit's combat logic
     activeUnits.forEach(u => {
         if (u.isDead) return;
+        
+        // Passive energy generation based on Intelligence (Zhili)
+        if (!u.isBuilding) {
+            const passiveEnergy = (u.stats.zhili || 0) * 0.015;
+            u.energy = Math.min(100, u.energy + passiveEnergy);
+        }
         
         // Stun Check: stunned units skip actions
         const isStunned = u.statusEffects.some(eff => eff.type === 'stun');
@@ -1372,8 +1388,8 @@ function performAttack(attacker, target, now) {
         setTimeout(() => dom.classList.remove(directionClass), 200);
     }
     
-    // Calculate basic physical damage using attacker's 武力 (Martial Power)
-    let damage = attacker.stats.wuli;
+    // Calculate basic physical damage using attacker's 武力 (Martial Power) (Nerfed by 25% for balance)
+    let damage = Math.round(attacker.stats.wuli * 0.75);
     
     const sqBuff = attacker.statusEffects.find(e => e.type === 'sun_quan_buff');
     if (sqBuff) {
@@ -2178,8 +2194,9 @@ function castSkill(unit) {
                 takeDamage(other, netDmg, 'skill', unit);
             });
             if (totalDmgDealt > 0) {
-                healUnit(unit, totalDmgDealt, unit);
-                addLog(`🦅 司馬懿的 [鷹視狼顧] 共造成 ${totalDmgDealt} 點傷害，並為自身治療 ${totalDmgDealt} 生命值！`, 'skill');
+                const lifestealVal = Math.round(totalDmgDealt * config.lifestealMult);
+                healUnit(unit, lifestealVal, unit);
+                addLog(`🦅 司馬懿的 [鷹視狼顧] 共造成 ${totalDmgDealt} 點傷害，並為自身治療 ${lifestealVal} 生命值！`, 'skill');
             }
             break;
         }
@@ -2224,7 +2241,7 @@ function castSkill(unit) {
                 if (activeFates.includes('hero_beauty')) {
                     const luBu = activeUnits.find(u => !u.isDead && u.team === unit.team && u.templateId === 'lu_bu');
                     if (luBu) {
-                        const transferPct = Math.min(config.statTransferPct * skillLvlMult, 1.0);
+                        const transferPct = Math.min(0.25 * skillLvlMult, 0.50);
                         const wuliTransfer = Math.round(highestDmgEnemy.stats.wuli * transferPct);
                         const zhiliTransfer = Math.round(highestDmgEnemy.stats.zhili * transferPct);
                         const tongshuaiTransfer = Math.round(highestDmgEnemy.stats.tongshuai * transferPct);
@@ -2315,7 +2332,8 @@ function castSkill(unit) {
                 const sy = unit.y + offset.y;
                 
                 if (isCellWalkable(sx, sy) && !isCellOccupied(sx, sy)) {
-                    spawnSummon('danyang_soldier', sx, sy, unit.team, skillLvlMult);
+                    const starScale = unit.star === 1 ? 1.0 : (unit.star === 2 ? 1.8 : 3.2);
+                    spawnSummon('danyang_soldier', sx, sy, unit.team, skillLvlMult * starScale);
                     summonedCount++;
                 }
             }
@@ -2412,19 +2430,20 @@ function castSkill(unit) {
             break;
 
         case 'xun_yu_curse':
-            let maxHPEnergyEnemy = null;
-            let maxHP = -1;
+            let lowestHPPercentEnemy = null;
+            let minHPPercent = 1.1;
             activeUnits.forEach(other => {
                 if (other.isDead || other.team === unit.team) return;
-                if (other.hp > maxHP) {
-                    maxHP = other.hp;
-                    maxHPEnergyEnemy = other;
+                const pct = other.hp / other.hpMax;
+                if (pct < minHPPercent) {
+                    minHPPercent = pct;
+                    lowestHPPercentEnemy = other;
                 }
             });
-            if (maxHPEnergyEnemy) {
-                applyStatusEffect(maxHPEnergyEnemy, 'xun_yu_curse', 0, config.durationSec * 1000, { level: unit.skillLevel, casterZhili: unit.stats.zhili });
-                createFloatingNumber(maxHPEnergyEnemy, '詛咒', 'dmg');
-                addLog(`💀 荀彧對 ${maxHPEnergyEnemy.name} 施加了驅虎吞狼詛咒！`, 'skill');
+            if (lowestHPPercentEnemy) {
+                applyStatusEffect(lowestHPPercentEnemy, 'xun_yu_curse', 0, config.durationSec * 1000, { level: unit.skillLevel, casterZhili: unit.stats.zhili });
+                createFloatingNumber(lowestHPPercentEnemy, '詛咒', 'dmg');
+                addLog(`💀 荀彧對 ${lowestHPPercentEnemy.name} 施加了驅虎吞狼詛咒！`, 'skill');
             }
             break;
 
@@ -2748,7 +2767,8 @@ function castSkill(unit) {
             const sx = unit.x + offset.x;
             const sy = unit.y + offset.y;
             if (isCellWalkable(sx, sy) && !isCellOccupied(sx, sy)) {
-                spawnSummon('yellow_turban_grunt', sx, sy, unit.team, skillLvlMult);
+                const starScale = unit.star === 1 ? 1.0 : (unit.star === 2 ? 1.8 : 3.2);
+                spawnSummon('yellow_turban_grunt', sx, sy, unit.team, skillLvlMult * starScale);
                 addLog(`⚡ 黃巾起義效果生效，召喚了一名黃巾兵！`, 'skill');
                 spawned = true;
                 break;

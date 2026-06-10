@@ -13,10 +13,10 @@ export const UNIT_TEMPLATES = {
         role: '後排法師 / 治療',
         faction: 'shu',
         cost: 4,
-        hp: 550,
+        hp: 680,
         wuli: 20,
         zhili: 120,
-        tongshuai: 65,
+        tongshuai: 75,
         atkSpeed: 0.9,
         range: 4,
         isBuilding: false,
@@ -27,7 +27,7 @@ export const UNIT_TEMPLATES = {
         skillDesc: '對3x3範圍內的敵人造成200%智力謀略傷害，並為友軍恢復100%智力生命值。',
         skillConfig: {
             type: 'aoe_dmg_heal',
-            energyMax: 100,
+            energyMax: 90,
             radius: 1.5, // 3x3 area
             dmgMult: 2.0,
             healMult: 1.0
@@ -40,7 +40,7 @@ export const UNIT_TEMPLATES = {
         role: '前排坦克 / 控制',
         faction: 'shu',
         cost: 4,
-        hp: 950,
+        hp: 880,
         wuli: 100,
         zhili: 15,
         tongshuai: 90,
@@ -51,15 +51,15 @@ export const UNIT_TEMPLATES = {
         avatarText: '飛',
         color: '#ff4757', // Red
         skillName: '燕人咆哮',
-        skillDesc: '對前方2x3範圍內的敵人造成150%武力傷害，嘲諷敵人並獲得相當於300%統率防禦值的護盾，持續4秒。',
+        skillDesc: '對前方2x3範圍內的敵人造成150%武力傷害，嘲諷敵人並獲得相當於150%統率防禦值的護盾，持續3秒。',
         skillConfig: {
             type: 'taunt_shield_sweep',
             energyMax: 100,
             rangeX: 2,
             rangeY: 3,
             dmgMult: 1.5,
-            shieldMult: 3.0,
-            durationSec: 4
+            shieldMult: 1.5,
+            durationSec: 3
         },
 },
     
@@ -97,7 +97,7 @@ export const UNIT_TEMPLATES = {
         role: '前排突擊 / 輸出',
         faction: 'shu',
         cost: 3,
-        hp: 680,
+        hp: 640,
         wuli: 100,
         zhili: 35,
         tongshuai: 80,
@@ -108,14 +108,14 @@ export const UNIT_TEMPLATES = {
         avatarText: '雲',
         color: '#1e90ff', // Blue
         skillName: '龍膽突刺',
-        skillDesc: '將前方的敵人擊退2格，自身獲得50%免傷，並嘲諷被擊退的敵人攻擊自己（敵人造成的傷害降低50%），持續5秒。',
+        skillDesc: '將前方的敵人擊退2格，自身獲得50%免傷，並嘲諷被擊退的敵人攻擊自己（敵人造成的傷害降低50%），持續3.5秒。',
         skillConfig: {
             type: 'push_dive',
             energyMax: 100,
             pushDist: 2,
             dmgReduction: 0.50,
             tauntDmgReduction: 0.50,
-            durationSec: 5
+            durationSec: 3.5
         },
 },
 
@@ -126,9 +126,9 @@ export const UNIT_TEMPLATES = {
         role: '後排輔助 / 治療',
         faction: 'shu',
         cost: 3,
-        hp: 650,
+        hp: 720,
         wuli: 55,
-        zhili: 90,
+        zhili: 98,
         tongshuai: 85,
         atkSpeed: 0.95,
         range: 3,
@@ -165,13 +165,13 @@ export const UNIT_TEMPLATES = {
         avatarText: '羽',
         color: '#2ed573', // Shu Green
         skillName: '威震華夏',
-        skillDesc: '對2格半徑範圍內的敵人造成220%武力物理傷害，並使受擊目標震懾2秒。',
+        skillDesc: '對2格半徑範圍內的敵人造成170%武力物理傷害，並使受擊目標震懾1.2秒。',
         skillConfig: {
             type: 'guan_yu_aoe',
             energyMax: 100,
             radius: 2,
-            dmgMult: 2.2,
-            stunDurationSec: 2
+            dmgMult: 1.7,
+            stunDurationSec: 1.2
         },
 },
 
@@ -219,12 +219,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '超',
         color: '#2ed573',
         skillName: '槊血作氣',
-        skillDesc: '主動：自身獲得50%武力提升，且普通攻擊對周圍相鄰敵人造成60%的濺射傷害，持續5秒。',
+        skillDesc: '主動：自身獲得35%武力提升，且普通攻擊對周圍相鄰敵人造成40%的濺射傷害，持續5秒。',
         skillConfig: {
             type: 'ma_chao_buff',
             energyMax: 100,
-            wuliBuff: 0.50,
-            splashPct: 0.60,
+            wuliBuff: 0.35,
+            splashPct: 0.40,
             durationSec: 5
         },
 },
@@ -235,10 +235,10 @@ export const UNIT_TEMPLATES = {
         role: '後排法師 / 鏈接傳導',
         faction: 'shu',
         cost: 4,
-        hp: 600,
+        hp: 700,
         wuli: 25,
         zhili: 116,
-        tongshuai: 62,
+        tongshuai: 72,
         atkSpeed: 0.85,
         range: 4,
         isBuilding: false,
@@ -246,12 +246,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '統',
         color: '#2ed573',
         skillName: '連環計',
-        skillDesc: '主動：將隨機3名敵軍鏈接在一起，持續6秒。當其中任意一人受到傷害時，其他被鏈接的敵人亦受到該傷害的30%（傳導真實傷害）。',
+        skillDesc: '主動：將隨機3名敵軍鏈接在一起，持續6秒。當其中任意一人受到傷害時，其他被鏈接的敵人亦受到該傷害的45%（傳導真實傷害）。',
         skillConfig: {
             type: 'pang_tong_chain',
             energyMax: 100,
             targetCount: 3,
-            sharePct: 0.30,
+            sharePct: 0.45,
             durationSec: 6
         },
 },
@@ -262,10 +262,10 @@ export const UNIT_TEMPLATES = {
         role: '後排輔助 / 增益',
         faction: 'wei',
         cost: 3,
-        hp: 520,
+        hp: 660,
         wuli: 20,
         zhili: 110,
-        tongshuai: 50,
+        tongshuai: 70,
         atkSpeed: 0.95,
         range: 4,
         isBuilding: false,
@@ -289,7 +289,7 @@ export const UNIT_TEMPLATES = {
         role: '後排謀士 / 詛咒',
         faction: 'wei',
         cost: 3,
-        hp: 540,
+        hp: 700,
         wuli: 15,
         zhili: 105,
         tongshuai: 60,
@@ -300,7 +300,7 @@ export const UNIT_TEMPLATES = {
         avatarText: '彧',
         color: '#54a0ff', // Wei Blue
         skillName: '驅虎吞狼',
-        skillDesc: '對生命值最高的敵軍施加5秒咒罵。目標每秒受到其最大生命值10%的傷害（最大不超過施法者300%智力），並將傷害濺射至相鄰格子。',
+        skillDesc: '對生命值百分比最低的敵軍施加5秒咒罵。目標每秒受到其最大生命值10%的傷害（最大不超過施法者300%智力），並將傷害濺射至相鄰格子。',
         skillConfig: {
             type: 'xun_yu_curse',
             energyMax: 100,
@@ -315,10 +315,10 @@ export const UNIT_TEMPLATES = {
         role: '後排謀士 / 混亂控制',
         faction: 'wei',
         cost: 4,
-        hp: 620,
+        hp: 720,
         wuli: 22,
         zhili: 114,
-        tongshuai: 68,
+        tongshuai: 72,
         atkSpeed: 0.9,
         range: 4,
         isBuilding: false,
@@ -343,10 +343,10 @@ export const UNIT_TEMPLATES = {
         role: '後排法師 / 禁療真實傷害',
         faction: 'wei',
         cost: 3,
-        hp: 560,
+        hp: 720,
         wuli: 24,
-        zhili: 106,
-        tongshuai: 56,
+        zhili: 110,
+        tongshuai: 66,
         atkSpeed: 0.85,
         range: 4,
         isBuilding: false,
@@ -354,11 +354,11 @@ export const UNIT_TEMPLATES = {
         avatarText: '昱',
         color: '#54a0ff',
         skillName: '十面埋伏',
-        skillDesc: '主動：對所有身上有負面狀態的敵軍造成180%智力謀略傷害，並對其施加禁療與逃兵狀態（每秒造成40%智力的真實傷害，持續4秒）。',
+        skillDesc: '主動：對所有身上有負面狀態的敵軍造成220%智力謀略傷害，並對其施加禁療與逃兵狀態（每秒造成40%智力的真實傷害，持續4秒）。',
         skillConfig: {
             type: 'cheng_yu_ambush',
             energyMax: 100,
-            dmgMult: 1.8,
+            dmgMult: 2.2,
             dotMult: 0.40,
             durationSec: 4
         },
@@ -396,9 +396,9 @@ export const UNIT_TEMPLATES = {
         role: '後排群攻灼燒輸出',
         faction: 'wu',
         cost: 5,
-        hp: 650,
+        hp: 780,
         wuli: 35,
-        zhili: 130,
+        zhili: 120,
         tongshuai: 75,
         atkSpeed: 0.95,
         range: 4,
@@ -423,7 +423,7 @@ export const UNIT_TEMPLATES = {
         role: '後排法師 / 爆發',
         faction: 'wu',
         cost: 4,
-        hp: 680,
+        hp: 780,
         wuli: 30,
         zhili: 120,
         tongshuai: 70,
@@ -434,12 +434,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '遜',
         color: '#ff6b6b', // Wu Red
         skillName: '火燒連營',
-        skillDesc: '對處於灼燒狀態的敵人造成300%智力謀略傷害，並觸發爆炸造成150%智力謀略傷害，將灼燒擴散至相鄰敵人。',
+        skillDesc: '對處於灼燒狀態的敵人造成350%智力謀略傷害，並觸發爆炸造成180%智力謀略傷害，將灼燒擴散至相鄰敵人。',
         skillConfig: {
             type: 'lu_xun_explode',
             energyMax: 100,
-            targetDmgMult: 3.0,
-            splashDmgMult: 1.5
+            targetDmgMult: 3.5,
+            splashDmgMult: 1.8
         },
 },
 
@@ -449,7 +449,7 @@ export const UNIT_TEMPLATES = {
         role: '後排輔助 / 屬性轉移',
         faction: 'wu',
         cost: 3,
-        hp: 620,
+        hp: 720,
         wuli: 28,
         zhili: 108,
         tongshuai: 72,
@@ -476,8 +476,8 @@ export const UNIT_TEMPLATES = {
         role: '後排突擊 / 增益加成',
         faction: 'wu',
         cost: 4,
-        hp: 700,
-        wuli: 98,
+        hp: 820,
+        wuli: 112,
         zhili: 60,
         tongshuai: 68,
         atkSpeed: 1.1,
@@ -487,11 +487,11 @@ export const UNIT_TEMPLATES = {
         avatarText: '香',
         color: '#ff6b6b',
         skillName: '弓腰姬',
-        skillDesc: '主動：對目標造成180%武力物理傷害。若自身擁有活性增益狀態，則每多一個增益，技能傷害提升20%並恢復等同於100%智力的生命值。',
+        skillDesc: '主動：對目標造成220%武力物理傷害。若自身擁有活性增益狀態，則每多一個增益，技能傷害提升20%並恢復等同於100%智力的生命值。',
         skillConfig: {
             type: 'sun_shangxiang_gongyao',
             energyMax: 100,
-            dmgMult: 1.8,
+            dmgMult: 2.2,
             bonusDmgPerBuff: 0.20,
             healMult: 1.0
         },
@@ -514,11 +514,11 @@ export const UNIT_TEMPLATES = {
         avatarText: '慈',
         color: '#ff6b6b',
         skillName: '神射',
-        skillDesc: '主動：普通攻擊改為發動連擊（每次攻擊造成2次傷害），並每次攻擊降低目標10%統率（可疊加5層），持續5秒。',
+        skillDesc: '主動：普通攻擊改為發動連擊（每次攻擊造成2次傷害），並每次攻擊降低目標8%統率（可疊加5層），持續5秒。',
         skillConfig: {
             type: 'tai_shici_shenshe',
             energyMax: 100,
-            defShred: 0.10,
+            defShred: 0.08,
             maxStacks: 5,
             durationSec: 5
         },
@@ -530,10 +530,10 @@ export const UNIT_TEMPLATES = {
         role: '後排雷法 / 控制',
         faction: 'qun',
         cost: 4,
-        hp: 560,
+        hp: 680,
         wuli: 25,
-        zhili: 118,
-        tongshuai: 60,
+        zhili: 112,
+        tongshuai: 68,
         atkSpeed: 0.85,
         range: 4,
         isBuilding: false,
@@ -612,10 +612,10 @@ export const UNIT_TEMPLATES = {
         role: '後排法師 / 吸血',
         faction: 'wei',
         cost: 5,
-        hp: 750,
+        hp: 720,
         wuli: 40,
-        zhili: 125,
-        tongshuai: 88,
+        zhili: 120,
+        tongshuai: 80,
         atkSpeed: 0.9,
         range: 4,
         isBuilding: false,
@@ -623,13 +623,13 @@ export const UNIT_TEMPLATES = {
         avatarText: '懿',
         color: '#8e44ad', // Purple
         skillName: '鷹視狼顧',
-        skillDesc: '對所有敵人造成180%智力謀略傷害，並恢復傷害量60%的生命值。戰場上每死亡一個單位，自身全屬性提升10%。',
+        skillDesc: '對所有敵人造成180%智力謀略傷害，並恢復傷害量40%的生命值。戰場上每死亡一個單位，自身全屬性提升5%（最多疊加6次）。',
         skillConfig: {
             type: 'sima_yi_aoe',
             energyMax: 100,
             dmgMult: 1.8,
-            lifestealMult: 0.60,
-            statBoostPerDeath: 0.10
+            lifestealMult: 0.40,
+            statBoostPerDeath: 0.05
         },
 },
 
@@ -639,10 +639,10 @@ export const UNIT_TEMPLATES = {
         role: '前排核心輸出',
         faction: 'qun',
         cost: 5,
-        hp: 900,
+        hp: 820,
         wuli: 130,
         zhili: 10,
-        tongshuai: 75,
+        tongshuai: 65,
         atkSpeed: 0.95,
         range: 1,
         isBuilding: false,
@@ -650,12 +650,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '布',
         color: '#e74c3c', // Red
         skillName: '天下無雙',
-        skillDesc: '震懾相鄰的敵人1.5秒，隨後攻擊速度翻倍並造成120%的濺射傷害，持續5秒。',
+        skillDesc: '震懾相鄰的敵人1.5秒，隨後攻擊速度提升40%並造成120%的濺射傷害，持續5秒。',
         skillConfig: {
             type: 'lu_bu_rage',
             energyMax: 100,
             stunDurationSec: 1.5,
-            atkSpeedMult: 2.0,
+            atkSpeedMult: 1.4,
             splashDmgMult: 1.2,
             durationSec: 5
         },
@@ -667,10 +667,10 @@ export const UNIT_TEMPLATES = {
         role: '後排輔助 / 魅惑控制',
         faction: 'qun',
         cost: 3,
-        hp: 580,
+        hp: 700,
         wuli: 30,
-        zhili: 95,
-        tongshuai: 55,
+        zhili: 105,
+        tongshuai: 65,
         atkSpeed: 1.0,
         range: 3,
         isBuilding: false,
@@ -678,12 +678,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '蟬',
         color: '#e84393', // Pink
         skillName: '閉月羞花',
-        skillDesc: '魅惑傷害最高的敵人3秒（使其攻擊己方隊伍），並將其50%的屬性轉移給呂布。',
+        skillDesc: '魅惑傷害最高的敵人3秒（使其攻擊己方隊伍），並將其部分屬性轉移給呂布。',
         skillConfig: {
             type: 'diao_chan_charm',
             energyMax: 100,
             charmDurationSec: 3.0,
-            statTransferPct: 0.50
+            statTransferPct: 0.25
         },
 },
 
@@ -837,7 +837,7 @@ export const FATE_TEMPLATES = {
         id: 'royal_marriage',
         name: '梟雄聯姻',
         requiredIds: ['liu_bei', 'sun_shangxiang'],
-        desc: '兩人均獲得+20%最大生命值與+20%武力。當孫尚香獲得劉備治療時獲得100%治療量等額護盾；孫尚香普通攻擊時劉備額外恢復5點能量。'
+        desc: '兩人均獲得+20%最大生命值，且劉備獲得+20%智力、孫尚香獲得+20%武力。當孫尚香獲得劉備治療時獲得100%治療量等額護盾；孫尚香普通攻擊時劉備額外恢復5點能量。'
     },
     peach_garden: {
         id: 'peach_garden',
@@ -849,7 +849,7 @@ export const FATE_TEMPLATES = {
         id: 'wei_intellects',
         name: '魏之智',
         requiredIds: ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'],
-        desc: '四人均獲得+30%智力與+20%奇謀（法術暴擊）幾率，戰鬥開始時直接獲得50點能量。'
+        desc: '四人均獲得+20%智力與+15%奇謀（法術暴擊）幾率，戰鬥開始時直接獲得40點能量。'
     },
     wu_commander: {
         id: 'wu_commander',
