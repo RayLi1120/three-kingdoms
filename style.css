@@ -2620,3 +2620,71 @@ body {
         padding: 12px 48px 12px 14px;
     }
 }
+
+/* ==========================================================================
+   DAMAGE METER STYLES
+   ========================================================================== */
+.damage-meter-container {
+    flex: 2.1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 12px;
+}
+
+.damage-meter-body {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+}
+
+.damage-meter-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 4px;
+    margin-top: 4px;
+}
+
+.damage-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.damage-row-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.damage-unit-name {
+    color: var(--text-secondary);
+}
+
+.damage-unit-val {
+    color: var(--gold);
+}
+
+.damage-bar-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.damage-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.3s ease;
+}

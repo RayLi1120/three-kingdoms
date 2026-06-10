@@ -96,7 +96,7 @@ export const state = {
 };
 // DOM Elements
 let elRound, elGold, elCostDisplay, elCostBarFill, elLivesContainer;
-let elGrid, elShopSlots, elDetailPanel, elDetailContent, elLogBody;
+let elGrid, elShopSlots, elDetailPanel, elDetailContent, elLogBody, elDamageMeterContainer, elSynergyPanel;
 let elBtnUpgrade, elBtnRefresh, elBtnStart, elUpgradeGoldCost;
 let elOverlay, elOverlayTitle, elOverlayDesc, elOverlayRewards, elBtnOverlayAction;
 
@@ -129,6 +129,8 @@ function cacheElements() {
     elDetailPanel = document.getElementById('detail-panel');
     elDetailContent = document.getElementById('detail-content');
     elLogBody = document.getElementById('log-body');
+    elDamageMeterContainer = document.getElementById('damage-meter-container');
+    elSynergyPanel = document.getElementById('synergy-panel');
     
     elBtnUpgrade = document.getElementById('btn-upgrade-cost');
     elUpgradeGoldCost = document.getElementById('upgrade-gold-cost');
@@ -311,6 +313,10 @@ export function startPrepPhase() {
     
     state.selectedEntity = null;
     hideDetailCard();
+    
+    if (elDetailPanel) elDetailPanel.classList.remove('hidden');
+    if (elSynergyPanel) elSynergyPanel.classList.remove('hidden');
+    if (elDamageMeterContainer) elDamageMeterContainer.classList.add('hidden');
     
     updateUI();
     renderBoard();
@@ -1301,6 +1307,10 @@ function triggerBattleStart() {
     
     // Update button states
     state.gameState = 'battle';
+    if (elDetailPanel) elDetailPanel.classList.add('hidden');
+    if (elSynergyPanel) elSynergyPanel.classList.add('hidden');
+    if (elDamageMeterContainer) elDamageMeterContainer.classList.remove('hidden');
+
     elBtnStart.disabled = true;
     elBtnStart.classList.remove('pulsing');
     elBtnRefresh.disabled = true;
@@ -1954,6 +1964,10 @@ function startPvpCombat(data) {
     });
     
     state.gameState = 'battle';
+    if (elDetailPanel) elDetailPanel.classList.add('hidden');
+    if (elSynergyPanel) elSynergyPanel.classList.add('hidden');
+    if (elDamageMeterContainer) elDamageMeterContainer.classList.remove('hidden');
+
     if (elBtnStart) { elBtnStart.disabled = true; elBtnStart.classList.remove('pulsing'); }
     if (elBtnRefresh) elBtnRefresh.disabled = true;
     if (elBtnUpgrade) elBtnUpgrade.disabled = true;

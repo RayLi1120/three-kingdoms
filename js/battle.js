@@ -293,6 +293,7 @@ function createEnemy(templateId, x, y) {
         hpMax: Math.round(stats.hpMax * scaleFactor),
         shield: 0,
         energy: 0,
+        damageDealt: 0,
         stats: {
             hpMax: Math.round(stats.hpMax * scaleFactor),
             wuli: Math.round(stats.wuli * scaleFactor),
@@ -399,6 +400,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             hpMax: stats.hpMax,
             shield: u.templateId === 'sentry_tower' ? currentRound * 100 : 0,
             energy: 0,
+            damageDealt: 0,
             stats,
             isBuilding: u.isBuilding,
             color: template.color,
@@ -517,6 +519,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 hpMax: stats.hpMax,
                 shield: 0,
                 energy: 0,
+                damageDealt: 0,
                 stats,
                 isBuilding: template.isBuilding,
                 color: template.color || '#ff4757',
@@ -1375,6 +1378,10 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
     
     unit.hp = Math.max(unit.hp - netDmg, 0);
     
+    if (source) {
+        source.damageDealt = (source.damageDealt || 0) + netDmg;
+    }
+    
     if (isCrit) {
         createFloatingNumber(unit, `💥 ${netDmg} 暴擊!`, 'dmg');
     } else {
@@ -1965,6 +1972,7 @@ function spawnSummon(templateId, x, y, team, scaleMult) {
         hpMax: hpMax,
         shield: 0,
         energy: 0,
+        damageDealt: 0,
         stats: {
             hpMax,
             wuli: Math.round(stats.wuli * scaleMult),
@@ -2076,6 +2084,69 @@ function updateGridVisuals() {
         const energyBar = dom.querySelector('.energy-fill');
         if (energyBar) energyBar.style.transform = `scaleX(${unit.energy / 100})`;
     });
+    
+    // Update live damage meter
+    updateDamageMeter();
+}
+
+function updateDamageMeter() {
+    const elPlayerList = document.getElementById('damage-meter-player-list');
+    const elEnemyList = document.getElementById('damage-meter-enemy-list');
+    if (!elPlayerList || !elEnemyList) return;
+    
+    // Split active units into teams
+    const playerUnits = activeUnits.filter(u => u.team === 'player');
+    const enemyUnits = activeUnits.filter(u => u.team === 'enemy');
+    
+    // Calculate total damage dealt for each team
+    const totalPlayerDmg = playerUnits.reduce((sum, u) => sum + (u.damageDealt || 0), 0);
+    const totalEnemyDmg = enemyUnits.reduce((sum, u) => sum + (u.damageDealt || 0), 0);
+    
+    // Sort descending by damage dealt
+    playerUnits.sort((a, b) => (b.damageDealt || 0) - (a.damageDealt || 0));
+    enemyUnits.sort((a, b) => (b.damageDealt || 0) - (a.damageDealt || 0));
+    
+    // Find the max damage on each team for proportional bar width
+    const maxPlayerDmg = playerUnits.length > 0 ? (playerUnits[0].damageDealt || 0) : 0;
+    const maxEnemyDmg = enemyUnits.length > 0 ? (enemyUnits[0].damageDealt || 0) : 0;
+    
+    // Render Player Team list
+    elPlayerList.innerHTML = playerUnits.map(unit => {
+        const dmg = unit.damageDealt || 0;
+        const percent = totalPlayerDmg > 0 ? Math.round((dmg / totalPlayerDmg) * 100) : 0;
+        const barWidth = maxPlayerDmg > 0 ? Math.round((dmg / maxPlayerDmg) * 100) : 0;
+        const starsText = '★'.repeat(unit.star);
+        return `
+            <div class="damage-row">
+                <div class="damage-row-header">
+                    <span class="damage-unit-name">${starsText} ${unit.name}</span>
+                    <span class="damage-unit-val">${dmg} dmg (${percent}%)</span>
+                </div>
+                <div class="damage-bar-container">
+                    <div class="damage-bar-fill" style="width: ${barWidth}%; background-color: ${unit.color || '#ff9f43'};"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Render Enemy Team list
+    elEnemyList.innerHTML = enemyUnits.map(unit => {
+        const dmg = unit.damageDealt || 0;
+        const percent = totalEnemyDmg > 0 ? Math.round((dmg / totalEnemyDmg) * 100) : 0;
+        const barWidth = maxEnemyDmg > 0 ? Math.round((dmg / maxEnemyDmg) * 100) : 0;
+        const starsText = unit.star > 1 ? '★'.repeat(unit.star) : '';
+        return `
+            <div class="damage-row">
+                <div class="damage-row-header">
+                    <span class="damage-unit-name">${starsText} ${unit.name}</span>
+                    <span class="damage-unit-val">${dmg} dmg (${percent}%)</span>
+                </div>
+                <div class="damage-bar-container">
+                    <div class="damage-bar-fill" style="width: ${barWidth}%; background-color: ${unit.color || '#ff4757'};"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // ==========================================
