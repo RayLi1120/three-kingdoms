@@ -294,6 +294,8 @@ function createEnemy(templateId, x, y) {
         shield: 0,
         energy: 0,
         damageDealt: 0,
+        damageTaken: 0,
+        healingDone: 0,
         stats: {
             hpMax: Math.round(stats.hpMax * scaleFactor),
             wuli: Math.round(stats.wuli * scaleFactor),
@@ -401,6 +403,8 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             shield: u.templateId === 'sentry_tower' ? currentRound * 100 : 0,
             energy: 0,
             damageDealt: 0,
+            damageTaken: 0,
+            healingDone: 0,
             stats,
             isBuilding: u.isBuilding,
             color: template.color,
@@ -520,6 +524,8 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 shield: 0,
                 energy: 0,
                 damageDealt: 0,
+                damageTaken: 0,
+                healingDone: 0,
                 stats,
                 isBuilding: template.isBuilding,
                 color: template.color || '#ff4757',
@@ -756,7 +762,7 @@ function combatTick() {
                 });
                 if (lowestAlly) {
                     const healAmt = Math.round(u.stats.zhili * 0.8 * (1 + (u.skillLevel - 1) * 0.25));
-                    healUnit(lowestAlly, healAmt);
+                    healUnit(lowestAlly, healAmt, u);
                     createFloatingNumber(lowestAlly, '攜手禦敵', 'heal');
                 }
                 // Disarm 15%
@@ -1197,7 +1203,7 @@ function triggerAssaultSkill(attacker, target, config) {
             const dmg = Math.round(attacker.stats.zhili * config.dmgMult * levelMult);
             createFloatingNumber(attacker, '兵無常勢', 'skill');
             takeDamage(target, dmg, 'skill', attacker, false);
-            healUnit(attacker, dmg);
+            healUnit(attacker, dmg, attacker);
             break;
         }
         case 'lu_xun': {
@@ -1377,6 +1383,7 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
     }
     
     unit.hp = Math.max(unit.hp - netDmg, 0);
+    unit.damageTaken = (unit.damageTaken || 0) + netDmg;
     
     if (source) {
         source.damageDealt = (source.damageDealt || 0) + netDmg;
@@ -1394,7 +1401,7 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
         const xunYu = activeUnits.find(u => !u.isDead && u.team === unit.team && u.templateId === 'xun_yu');
         if (xunYu && getDistance(unit, xunYu) <= 1) {
             const healAmt = Math.round(xunYu.stats.zhili * 0.8 * (1 + (xunYu.skillLevel - 1) * 0.25));
-            healUnit(unit, healAmt);
+            healUnit(unit, healAmt, xunYu);
             createFloatingNumber(unit, '王佐之才', 'heal');
             addLog(`🏥 荀彧的 [王佐之才] 在 ${unit.name} 受到暴擊後為其恢復 ${healAmt} 生命值！`, 'skill');
         }
@@ -1415,7 +1422,7 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
         if (lifestealEffect) {
             const healAmt = Math.round(netDmg * (lifestealEffect.val / 100));
             if (healAmt > 0) {
-                healUnit(source, healAmt);
+                healUnit(source, healAmt, source);
             }
         }
     }
@@ -1426,7 +1433,7 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
     }
 }
 
-function healUnit(unit, amount) {
+function healUnit(unit, amount, source = null) {
     if (unit.isDead) return;
     
     const healVal = Math.min(amount, unit.hpMax - unit.hp);
@@ -1435,6 +1442,10 @@ function healUnit(unit, amount) {
     unit.hp += healVal;
     createFloatingNumber(unit, healVal, 'heal');
     playSound('heal');
+    
+    if (source) {
+        source.healingDone = (source.healingDone || 0) + healVal;
+    }
     
     if (unit.team === 'player' && unit.boardReference) {
         unit.boardReference.hp = unit.hp;
@@ -1465,7 +1476,7 @@ function healLowestAlly(healer, amount) {
     });
     
     if (target) {
-        healUnit(target, amount);
+        healUnit(target, amount, healer);
     }
 }
 
@@ -1568,7 +1579,7 @@ function castSkill(unit) {
                 takeDamage(other, netDmg, 'skill', unit);
             });
             if (totalDmgDealt > 0) {
-                healUnit(unit, totalDmgDealt);
+                healUnit(unit, totalDmgDealt, unit);
                 addLog(`🦅 司馬懿的 [鷹視狼顧] 共造成 ${totalDmgDealt} 點傷害，並為自身治療 ${totalDmgDealt} 生命值！`, 'skill');
             }
             break;
@@ -1650,7 +1661,7 @@ function castSkill(unit) {
                         if (other.team !== unit.team) {
                             takeDamage(other, dmgValue, 'skill', unit);
                         } else {
-                            healUnit(other, healValue);
+                            healUnit(other, healValue, unit);
                         }
                     }
                 });
@@ -1713,7 +1724,7 @@ function castSkill(unit) {
             // 2. Heal and shield all allies
             activeUnits.forEach(other => {
                 if (other.isDead || other.team !== unit.team) return;
-                healUnit(other, caoHeal);
+                healUnit(other, caoHeal, unit);
                 addShield(other, caoShield, 4);
             });
             break;
@@ -1763,7 +1774,7 @@ function castSkill(unit) {
             activeUnits.forEach(other => {
                 if (other.isDead || other.team !== unit.team) return;
                 if (getDistance(unit, other) <= config.radius) {
-                    healUnit(other, lbHealVal);
+                    healUnit(other, lbHealVal, unit);
                     const lbDmgReduc = Math.round(config.dmgReduc * 100 * skillLvlMult);
                     applyStatusEffect(other, 'liu_bei_buff', Math.min(lbDmgReduc, 90), config.durationSec * 1000);
                     createFloatingNumber(other, '護盾', 'shield');
@@ -1973,6 +1984,8 @@ function spawnSummon(templateId, x, y, team, scaleMult) {
         shield: 0,
         energy: 0,
         damageDealt: 0,
+        damageTaken: 0,
+        healingDone: 0,
         stats: {
             hpMax,
             wuli: Math.round(stats.wuli * scaleMult),
@@ -2089,38 +2102,55 @@ function updateGridVisuals() {
     updateDamageMeter();
 }
 
-function updateDamageMeter() {
+export function updateDamageMeter() {
     const elPlayerList = document.getElementById('damage-meter-player-list');
     const elEnemyList = document.getElementById('damage-meter-enemy-list');
     if (!elPlayerList || !elEnemyList) return;
+    
+    // Read the active tab: 'dealt', 'taken', or 'healed'
+    const activeTabBtn = document.querySelector('.damage-tab-btn.active');
+    const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : 'dealt';
     
     // Split active units into teams
     const playerUnits = activeUnits.filter(u => u.team === 'player');
     const enemyUnits = activeUnits.filter(u => u.team === 'enemy');
     
-    // Calculate total damage dealt for each team
-    const totalPlayerDmg = playerUnits.reduce((sum, u) => sum + (u.damageDealt || 0), 0);
-    const totalEnemyDmg = enemyUnits.reduce((sum, u) => sum + (u.damageDealt || 0), 0);
+    const getStat = (u) => {
+        if (activeTab === 'healed') return u.healingDone || 0;
+        if (activeTab === 'taken') return u.damageTaken || 0;
+        return u.damageDealt || 0;
+    };
     
-    // Sort descending by damage dealt
-    playerUnits.sort((a, b) => (b.damageDealt || 0) - (a.damageDealt || 0));
-    enemyUnits.sort((a, b) => (b.damageDealt || 0) - (a.damageDealt || 0));
+    // Calculate total values for percent calculation
+    const totalPlayerVal = playerUnits.reduce((sum, u) => sum + getStat(u), 0);
+    const totalEnemyVal = enemyUnits.reduce((sum, u) => sum + getStat(u), 0);
     
-    // Find the max damage on each team for proportional bar width
-    const maxPlayerDmg = playerUnits.length > 0 ? (playerUnits[0].damageDealt || 0) : 0;
-    const maxEnemyDmg = enemyUnits.length > 0 ? (enemyUnits[0].damageDealt || 0) : 0;
+    // Sort descending by selected stat
+    playerUnits.sort((a, b) => getStat(b) - getStat(a));
+    enemyUnits.sort((a, b) => getStat(b) - getStat(a));
+    
+    // Find the max value on each team for proportional bar width
+    const maxPlayerVal = playerUnits.length > 0 ? getStat(playerUnits[0]) : 0;
+    const maxEnemyVal = enemyUnits.length > 0 ? getStat(enemyUnits[0]) : 0;
+    
+    // Label depending on tab
+    const getLabel = (val, percent) => {
+        if (activeTab === 'healed') return `${val} 治療 (${percent}%)`;
+        if (activeTab === 'taken') return `${val} 承傷 (${percent}%)`;
+        return `${val} dmg (${percent}%)`;
+    };
     
     // Render Player Team list
     elPlayerList.innerHTML = playerUnits.map(unit => {
-        const dmg = unit.damageDealt || 0;
-        const percent = totalPlayerDmg > 0 ? Math.round((dmg / totalPlayerDmg) * 100) : 0;
-        const barWidth = maxPlayerDmg > 0 ? Math.round((dmg / maxPlayerDmg) * 100) : 0;
+        const val = getStat(unit);
+        const percent = totalPlayerVal > 0 ? Math.round((val / totalPlayerVal) * 100) : 0;
+        const barWidth = maxPlayerVal > 0 ? Math.round((val / maxPlayerVal) * 100) : 0;
         const starsText = '★'.repeat(unit.star);
         return `
             <div class="damage-row">
                 <div class="damage-row-header">
                     <span class="damage-unit-name">${starsText} ${unit.name}</span>
-                    <span class="damage-unit-val">${dmg} dmg (${percent}%)</span>
+                    <span class="damage-unit-val">${getLabel(val, percent)}</span>
                 </div>
                 <div class="damage-bar-container">
                     <div class="damage-bar-fill" style="width: ${barWidth}%; background-color: ${unit.color || '#ff9f43'};"></div>
@@ -2131,15 +2161,15 @@ function updateDamageMeter() {
     
     // Render Enemy Team list
     elEnemyList.innerHTML = enemyUnits.map(unit => {
-        const dmg = unit.damageDealt || 0;
-        const percent = totalEnemyDmg > 0 ? Math.round((dmg / totalEnemyDmg) * 100) : 0;
-        const barWidth = maxEnemyDmg > 0 ? Math.round((dmg / maxEnemyDmg) * 100) : 0;
+        const val = getStat(unit);
+        const percent = totalEnemyVal > 0 ? Math.round((val / totalEnemyVal) * 100) : 0;
+        const barWidth = maxEnemyVal > 0 ? Math.round((val / maxEnemyVal) * 100) : 0;
         const starsText = unit.star > 1 ? '★'.repeat(unit.star) : '';
         return `
             <div class="damage-row">
                 <div class="damage-row-header">
                     <span class="damage-unit-name">${starsText} ${unit.name}</span>
-                    <span class="damage-unit-val">${dmg} dmg (${percent}%)</span>
+                    <span class="damage-unit-val">${getLabel(val, percent)}</span>
                 </div>
                 <div class="damage-bar-container">
                     <div class="damage-bar-fill" style="width: ${barWidth}%; background-color: ${unit.color || '#ff4757'};"></div>

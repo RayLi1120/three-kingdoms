@@ -159,7 +159,11 @@
 
                 <!-- Damage Meter Panel -->
                 <div class="damage-meter-container glass hidden" id="damage-meter-container">
-                    <div class="log-header">傷害統計</div>
+                    <div class="damage-meter-tabs">
+                        <button class="damage-tab-btn active" data-tab="dealt">傷害輸出</button>
+                        <button class="damage-tab-btn" data-tab="taken">承受傷害</button>
+                        <button class="damage-tab-btn" data-tab="healed">治療恢復</button>
+                    </div>
                     <div class="damage-meter-body" id="damage-meter-body">
                         <div class="damage-meter-section-title">己方武將</div>
                         <div class="damage-meter-list" id="damage-meter-player-list">

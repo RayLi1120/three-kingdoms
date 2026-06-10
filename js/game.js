@@ -5,7 +5,7 @@
  */
 
 import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar } from './units.js';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound } from './battle.js';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -269,6 +269,22 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Tabs click handlers for the combat stats meter
+    document.querySelectorAll('.damage-tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.damage-tab-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            updateDamageMeter();
+        });
+    });
+}
+
+function restorePrepUI() {
+    if (state.gameState !== 'prep') return;
+    if (elDetailPanel) elDetailPanel.classList.remove('hidden');
+    if (elSynergyPanel) elSynergyPanel.classList.remove('hidden');
+    if (elDamageMeterContainer) elDamageMeterContainer.classList.add('hidden');
 }
 
 // ==========================================
@@ -313,10 +329,6 @@ export function startPrepPhase() {
     
     state.selectedEntity = null;
     hideDetailCard();
-    
-    if (elDetailPanel) elDetailPanel.classList.remove('hidden');
-    if (elSynergyPanel) elSynergyPanel.classList.remove('hidden');
-    if (elDamageMeterContainer) elDamageMeterContainer.classList.add('hidden');
     
     updateUI();
     renderBoard();
@@ -428,6 +440,7 @@ function getUpgradeCost() {
 }
 
 function upgradeMaxDeployCost() {
+    restorePrepUI();
     const cost = getUpgradeCost();
     if (state.gold >= cost && state.maxDeployCost < 20) {
         state.gold -= cost;
@@ -521,6 +534,7 @@ function renderShop() {
 }
 
 function refreshShopManual() {
+    restorePrepUI();
     if (state.gold >= 2) {
         state.gold -= 2;
         rollShop();
@@ -531,6 +545,7 @@ function refreshShopManual() {
 
 function buyUnit(shopIndex) {
     if (state.gameState !== 'prep') return;
+    restorePrepUI();
     
     const template = state.shopSlots[shopIndex];
     if (!template) return;
@@ -729,6 +744,7 @@ function selectBenchUnit(index) {
 
 function handleBenchEmptySlotClick(index) {
     if (state.gameState !== 'prep') return;
+    restorePrepUI();
     
     // If we have a board unit selected, move it back to the bench!
     if (state.selectedEntity && state.selectedEntity.source === 'board') {
@@ -881,6 +897,7 @@ function selectBoardUnit(index) {
 
 function handleCellClick(x, y) {
     if (state.gameState !== 'prep') return;
+    restorePrepUI();
     
     // Only allow placing in player zone (y values 6 to 9)
     if (y < 6) {
@@ -1058,6 +1075,7 @@ function fuseBoardUnits(srcBoardIndex, destBoardIndex) {
 // DETAILS SIDEBAR INSPECTOR & UPGRADES
 // ==========================================
 function showDetailCard(unit, allowUpgrade = true) {
+    restorePrepUI();
     const template = UNIT_TEMPLATES[unit.templateId];
     if (!template) return;
     
