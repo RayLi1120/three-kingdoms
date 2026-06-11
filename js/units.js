@@ -69,10 +69,10 @@ export const UNIT_TEMPLATES = {
         role: '中排領袖 / 增益',
         faction: 'wei',
         cost: 4,
-        hp: 750,
+        hp: 700,
         wuli: 75,
         zhili: 95,
-        tongshuai: 100,
+        tongshuai: 90,
         atkSpeed: 1.0,
         range: 2,
         isBuilding: false,
@@ -273,12 +273,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '嘉',
         color: '#54a0ff', // Wei Blue
         skillName: '十勝十敗',
-        skillDesc: '使傷害最高的友軍獲得免疫控制（洞察）、30%免傷和+50%攻擊速度，持續5秒。',
+        skillDesc: '使傷害最高的友軍獲得免疫控制（洞察）、35%免傷和+60%攻擊速度，持續5秒。',
         skillConfig: {
             type: 'guo_jia_buff',
             energyMax: 100,
-            dmgReduc: 0.30,
-            atkSpeedBuff: 0.50,
+            dmgReduc: 0.35,
+            atkSpeedBuff: 0.60,
             durationSec: 5
         },
 },
@@ -326,14 +326,14 @@ export const UNIT_TEMPLATES = {
         avatarText: '詡',
         color: '#54a0ff',
         skillName: '神機莫測',
-        skillDesc: '主動：使隨機2名敵軍混亂3秒，並使己方混亂的隊友恢復120%智力生命值。若目標已被混亂，則改為對其造成220%智力謀略傷害。',
+        skillDesc: '主動：使隨機2名敵軍混亂4秒，並使己方混亂的隊友恢復150%智力生命值。若目標已被混亂，則改為對其造成260%智力謀略傷害。',
         skillConfig: {
             type: 'jia_xu_confusion',
             energyMax: 100,
             targetCount: 2,
-            confuseDurationSec: 3.0,
-            healMult: 1.2,
-            dmgMult: 2.2
+            confuseDurationSec: 4.0,
+            healMult: 1.5,
+            dmgMult: 2.6
         },
 },
 
@@ -354,11 +354,11 @@ export const UNIT_TEMPLATES = {
         avatarText: '昱',
         color: '#54a0ff',
         skillName: '十面埋伏',
-        skillDesc: '主動：對所有身上有負面狀態的敵軍造成220%智力謀略傷害，並對其施加禁療與逃兵狀態（每秒造成40%智力的真實傷害，持續4秒）。',
+        skillDesc: '主動：對所有身上有負面狀態的敵軍造成200%智力謀略傷害，並對其施加禁療與逃兵狀態（每秒造成40%智力的真實傷害，持續4秒）。',
         skillConfig: {
             type: 'cheng_yu_ambush',
             energyMax: 100,
-            dmgMult: 2.2,
+            dmgMult: 2.0,
             dotMult: 0.40,
             durationSec: 4
         },
@@ -503,8 +503,8 @@ export const UNIT_TEMPLATES = {
         role: '中排射手 / 護盾削減',
         faction: 'wu',
         cost: 4,
-        hp: 740,
-        wuli: 102,
+        hp: 780,
+        wuli: 110,
         zhili: 35,
         tongshuai: 74,
         atkSpeed: 1.1,
@@ -541,11 +541,11 @@ export const UNIT_TEMPLATES = {
         avatarText: '角',
         color: '#eccc68', // Qun Yellow
         skillName: '五雷轟頂',
-        skillDesc: '施放5次閃電隨機轟擊敵人，每次造成150%智力謀略傷害，並有30%概率使目標震懾1.5秒。',
+        skillDesc: '施放5次閃電隨機轟擊敵人，每次造成140%智力謀略傷害，並有30%概率使目標震懾1.5秒。',
         skillConfig: {
             type: 'zhang_jiao_lightning',
             energyMax: 100,
-            dmgMult: 1.5,
+            dmgMult: 1.4,
             boltCount: 5,
             stunChance: 0.30,
             stunDurationSec: 1.5
@@ -558,7 +558,7 @@ export const UNIT_TEMPLATES = {
         role: '中排統領 / 輔助',
         faction: 'qun',
         cost: 3,
-        hp: 720,
+        hp: 760,
         wuli: 78,
         zhili: 70,
         tongshuai: 80,
@@ -569,11 +569,11 @@ export const UNIT_TEMPLATES = {
         avatarText: '紹',
         color: '#eccc68', // Qun Yellow
         skillName: '累世重名',
-        skillDesc: '使所有盟友的防禦（統率）提升40%，持續5秒；並向前方發射一波箭雨，對直線上的敵人造成120%武力的物理傷害。',
+        skillDesc: '使所有盟友的防禦（統率）提升40%，持續5秒；並向前方發射一波箭雨，貫穿整條直線，對線上所有敵人造成140%武力的物理傷害。',
         skillConfig: {
             type: 'yuan_shao_line',
             energyMax: 100,
-            dmgMult: 1.2,
+            dmgMult: 1.4,
             defBuffPct: 0.40,
             durationSec: 5
         },
@@ -596,12 +596,12 @@ export const UNIT_TEMPLATES = {
         avatarText: '術',
         color: '#eccc68', // Qun Yellow
         skillName: '偽帝登基',
-        skillDesc: '自身武力與智力屬性提升80%，持續5秒，但每秒扣除自身當前生命值的12%。',
+        skillDesc: '自身武力與智力屬性提升100%，持續5秒，但每秒扣除自身當前生命值的10%。',
         skillConfig: {
             type: 'yuan_shu_sacrifice',
             energyMax: 100,
-            statBuffPct: 0.80,
-            hpDrainPct: 0.12,
+            statBuffPct: 1.00,
+            hpDrainPct: 0.10,
             durationSec: 5
         },
 },
@@ -640,7 +640,7 @@ export const UNIT_TEMPLATES = {
         faction: 'qun',
         cost: 5,
         hp: 820,
-        wuli: 130,
+        wuli: 138,
         zhili: 10,
         tongshuai: 65,
         atkSpeed: 0.95,
@@ -650,7 +650,7 @@ export const UNIT_TEMPLATES = {
         avatarText: '布',
         color: '#e74c3c', // Red
         skillName: '天下無雙',
-        skillDesc: '震懾相鄰的敵人1.5秒，隨後攻擊速度提升40%並造成120%的濺射傷害，持續5秒。',
+        skillDesc: '震懾相鄰的敵人1.5秒，隨後攻擊速度提升60%並造成135%的濺射傷害，持續5秒。',
         skillConfig: {
             type: 'lu_bu_rage',
             energyMax: 100,
@@ -667,9 +667,9 @@ export const UNIT_TEMPLATES = {
         role: '後排輔助 / 魅惑控制',
         faction: 'qun',
         cost: 3,
-        hp: 700,
+        hp: 740,
         wuli: 30,
-        zhili: 105,
+        zhili: 112,
         tongshuai: 65,
         atkSpeed: 1.0,
         range: 3,
@@ -678,11 +678,11 @@ export const UNIT_TEMPLATES = {
         avatarText: '蟬',
         color: '#e84393', // Pink
         skillName: '閉月羞花',
-        skillDesc: '魅惑傷害最高的敵人3秒（使其攻擊己方隊伍），並將其部分屬性轉移給呂布。',
+        skillDesc: '魅惑傷害最高的敵人4秒（使其攻擊己方隊伍），並將其部分屬性轉移給呂布。',
         skillConfig: {
             type: 'diao_chan_charm',
             energyMax: 100,
-            charmDurationSec: 3.0,
+            charmDurationSec: 4.0,
             statTransferPct: 0.25
         },
 },
@@ -696,8 +696,8 @@ export const UNIT_TEMPLATES = {
         role: '召喚近戰士兵',
         faction: 'summon',
         cost: 0,
-        hp: 250,
-        wuli: 45,
+        hp: 210,
+        wuli: 40,
         zhili: 0,
         tongshuai: 40,
         atkSpeed: 1.0,
@@ -717,8 +717,8 @@ export const UNIT_TEMPLATES = {
         role: '召喚近戰士兵',
         faction: 'summon',
         cost: 0,
-        hp: 240,
-        wuli: 40,
+        hp: 300,
+        wuli: 50,
         zhili: 0,
         tongshuai: 35,
         atkSpeed: 1.0,
@@ -843,7 +843,7 @@ export const FATE_TEMPLATES = {
         id: 'peach_garden',
         name: '桃園三結義',
         requiredIds: ['liu_bei', 'guan_yu', 'zhang_fei'],
-        desc: '三人均獲得+20%最大生命值、武力與統率。戰鬥開始時，獲得相當於自身最大生命值15%的護盾。'
+        desc: '三人均獲得+15%最大生命值、武力與統率。戰鬥開始時，獲得相當於自身最大生命值15%的護盾。'
     },
     wei_intellects: {
         id: 'wei_intellects',
@@ -861,7 +861,7 @@ export const FATE_TEMPLATES = {
         id: 'yellow_turban',
         name: '黃巾起義',
         requiredIds: ['zhang_jiao', 'yuan_shao', 'yuan_shu'],
-        desc: '三人均獲得+20%最大生命值。每次施放戰法時，會額外召喚一名黃巾兵參戰。'
+        desc: '三人均獲得+20%最大生命值。戰鬥開始時召喚2名黃巾兵；每次施放戰法時，額外召喚一名黃巾兵參戰。'
     },
     hero_beauty: {
         id: 'hero_beauty',
@@ -886,13 +886,13 @@ export const FATE_TEMPLATES = {
         id: 'pillars_state',
         name: '國之棟樑',
         requiredIds: ['sima_yi', 'zhou_yu', 'zhuge_liang'],
-        desc: '獲得+25%智力與+15%統率。戰鬥開始時，直接獲得40點能量。'
+        desc: '獲得+15%智力與+15%統率。戰鬥開始時，直接獲得30點能量。'
     },
     wei_dynasty: {
         id: 'wei_dynasty',
         name: '魏武之世',
         requiredIds: ['cao_cao', 'sima_yi'],
-        desc: '獲得+25%最大生命值與+20%統率防禦。雙方互相分攤並恢復對方造成傷害量20%的生命值。'
+        desc: '獲得+15%最大生命值與+15%統率防禦。雙方互相分攤並恢復對方造成傷害量12%的生命值。'
     }
 };
 

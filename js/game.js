@@ -4,8 +4,8 @@
  * duplicate fusion, skill upgrades, and round progression.
  */
 
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=19';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=21';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=24';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=26';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -1587,7 +1587,7 @@ function renderActiveFatesUI() {
         shu: { name: '蜀漢之志', stat: '最大兵力 +15% / +30%' },
         wei: { name: '曹魏霸業', stat: '智力屬性 +15% / +30%' },
         wu: { name: '孫吳聯盟', stat: '攻擊速度 +15% / +30%' },
-        qun: { name: '群雄割據', stat: '統率防禦 +15% / +30%' }
+        qun: { name: '群雄割據', stat: '統率與生命 +15% / +30%，武力 +10% / +20%' }
     };
     
     // Let's count unique units per faction to show progress (e.g. 1/2 or 3/4)

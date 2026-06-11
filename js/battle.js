@@ -1,4 +1,4 @@
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=19';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=24';
 
 // Local references to game state and callbacks to avoid circular imports
 let logCallback = null;
@@ -355,21 +355,23 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
         }
         if (template.faction === 'qun' && activeFactions.qun > 0) {
             const mult = activeFactions.qun === 2 ? 1.30 : 1.15;
+            const wuliMult = activeFactions.qun === 2 ? 1.20 : 1.10;
             stats.tongshuai = Math.round(stats.tongshuai * mult);
             stats.hpMax = Math.round(stats.hpMax * mult);
+            stats.wuli = Math.round(stats.wuli * wuliMult);
         }
         
         // Apply Zhao Yun secondary passive [一身是膽] stats buff
         if (u.templateId === 'zhao_yun') {
-            stats.wuli += 30;
-            stats.tongshuai += 30;
+            stats.wuli += 20;
+            stats.tongshuai += 20;
         }
 
         // Apply Fate synergy stat multipliers!
         if (activeFates.includes('peach_garden') && ['liu_bei', 'guan_yu', 'zhang_fei'].includes(u.templateId)) {
-            stats.hpMax = Math.round(stats.hpMax * 1.20);
-            stats.wuli = Math.round(stats.wuli * 1.20);
-            stats.tongshuai = Math.round(stats.tongshuai * 1.20);
+            stats.hpMax = Math.round(stats.hpMax * 1.15);
+            stats.wuli = Math.round(stats.wuli * 1.15);
+            stats.tongshuai = Math.round(stats.tongshuai * 1.15);
         }
         if (activeFates.includes('wei_intellects') && ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'].includes(u.templateId)) {
             stats.zhili = Math.round(stats.zhili * 1.20);
@@ -406,12 +408,12 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             stats.zhili = Math.round(stats.zhili * 1.20);
         }
         if (activeFates.includes('pillars_state') && ['sima_yi', 'zhou_yu', 'zhuge_liang'].includes(u.templateId)) {
-            stats.zhili = Math.round(stats.zhili * 1.25);
+            stats.zhili = Math.round(stats.zhili * 1.15);
             stats.tongshuai = Math.round(stats.tongshuai * 1.15);
         }
         if (activeFates.includes('wei_dynasty') && ['cao_cao', 'sima_yi'].includes(u.templateId)) {
-            stats.hpMax = Math.round(stats.hpMax * 1.25);
-            stats.tongshuai = Math.round(stats.tongshuai * 1.20);
+            stats.hpMax = Math.round(stats.hpMax * 1.15);
+            stats.tongshuai = Math.round(stats.tongshuai * 1.15);
         }
         
         activeUnits.push({
@@ -501,8 +503,10 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             }
             if (template.faction === 'qun' && oppActiveFactions.qun > 0) {
                 const mult = oppActiveFactions.qun === 2 ? 1.30 : 1.15;
+                const wuliMult = oppActiveFactions.qun === 2 ? 1.20 : 1.10;
                 stats.tongshuai = Math.round(stats.tongshuai * mult);
                 stats.hpMax = Math.round(stats.hpMax * mult);
+                stats.wuli = Math.round(stats.wuli * wuliMult);
             }
             
             // Apply Zhao Yun secondary passive [一身是膽] stats buff
@@ -552,12 +556,12 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 stats.zhili = Math.round(stats.zhili * 1.20);
             }
             if (oppActiveFates.includes('pillars_state') && ['sima_yi', 'zhou_yu', 'zhuge_liang'].includes(u.templateId)) {
-                stats.zhili = Math.round(stats.zhili * 1.25);
+                stats.zhili = Math.round(stats.zhili * 1.15);
                 stats.tongshuai = Math.round(stats.tongshuai * 1.15);
             }
             if (oppActiveFates.includes('wei_dynasty') && ['cao_cao', 'sima_yi'].includes(u.templateId)) {
-                stats.hpMax = Math.round(stats.hpMax * 1.25);
-                stats.tongshuai = Math.round(stats.tongshuai * 1.20);
+                stats.hpMax = Math.round(stats.hpMax * 1.15);
+                stats.tongshuai = Math.round(stats.tongshuai * 1.15);
             }
             
             // Mirror coordinate placement
@@ -767,18 +771,33 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 unit.energy = Math.min(100, unit.energy + 40);
             }
             if (activeFates.includes('pillars_state') && ['sima_yi', 'zhou_yu', 'zhuge_liang'].includes(unit.templateId)) {
-                unit.energy = Math.min(100, unit.energy + 40);
+                unit.energy = Math.min(100, unit.energy + 30);
             }
         } else if (unit.team === 'enemy') {
             if (oppActiveFates && oppActiveFates.includes('wei_intellects') && ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'].includes(unit.templateId)) {
                 unit.energy = Math.min(100, unit.energy + 40);
             }
             if (oppActiveFates && oppActiveFates.includes('pillars_state') && ['sima_yi', 'zhou_yu', 'zhuge_liang'].includes(unit.templateId)) {
-                unit.energy = Math.min(100, unit.energy + 40);
+                unit.energy = Math.min(100, unit.energy + 30);
             }
         }
     });
     
+    // yellow_turban Fate: the uprising begins with militia already on the field
+    ['player', 'enemy'].forEach(teamName => {
+        const active = teamName === 'player' ? activeFates.includes('yellow_turban') : (oppActiveFates && oppActiveFates.includes('yellow_turban'));
+        if (!active) return;
+        const frontY = teamName === 'player' ? 6 : 3;
+        let spawned = 0;
+        for (const sx of [3, 4, 2, 5]) {
+            if (spawned >= 2) break;
+            if (isCellWalkable(sx, frontY) && !isCellOccupied(sx, frontY)) {
+                spawnSummon('yellow_turban_grunt', sx, frontY, teamName, 1.0);
+                spawned++;
+            }
+        }
+    });
+
     // Render starting battlefield units
     renderBattlefield();
 }
@@ -949,7 +968,7 @@ function combatTick() {
                 curseEffect.lastTick = now;
                 const skillLvlMult = curseEffect.level || 1;
                 const multiplier = 1 + (skillLvlMult - 1) * 0.25;
-                const dmgAmt = Math.round(u.hpMax * 0.08 * multiplier);
+                const dmgAmt = Math.round(u.hpMax * 0.10 * multiplier);
                 
                 addLog(`💀 荀彧的驅虎吞狼詛咒對 ${u.name} 造成了 ${dmgAmt} 點傷害！`, 'damage');
                 takeDamage(u, dmgAmt, 'skill');
@@ -969,7 +988,7 @@ function combatTick() {
         if (ysBuffEffect) {
             if (!ysBuffEffect.lastTick || now - ysBuffEffect.lastTick >= 1000) {
                 ysBuffEffect.lastTick = now;
-                const drainAmt = Math.round(u.hp * 0.12);
+                const drainAmt = Math.round(u.hp * 0.10);
                 if (drainAmt > 0) {
                     addLog(`🩸 袁術的反噬效果對自己造成了 ${drainAmt} 點自損傷害！`, 'damage');
                     takeDamage(u, drainAmt, 'skill');
@@ -1021,7 +1040,7 @@ function combatTick() {
             if (!u.hasExploded && now - u.combatStartTime >= 5000) {
                 u.hasExploded = true;
                 const enemies = activeUnits.filter(other => !other.isDead && other.team !== u.team);
-                const baseDmg = Math.round(u.stats.zhili * 3.0 * (1 + (u.skillLevel - 1) * 0.25));
+                const baseDmg = Math.round(u.stats.zhili * 2.5 * (1 + (u.skillLevel - 1) * 0.25));
                 createFloatingNumber(u, '士別三日', 'skill');
                 addLog(`💥 ${u.team === 'player' ? '己方' : '敵方'}龐統觸發 [士別三日] 爆裂，對所有敵軍造成巨大謀略傷害！`, 'skill');
                 enemies.forEach(enemy => {
@@ -1201,7 +1220,7 @@ function combatTick() {
             if (rageBuff) {
                 const skillLvlMult = rageBuff.level || 1;
                 const multiplier = 1 + (skillLvlMult - 1) * 0.25;
-                effectiveAtkSpeed *= (1 + 0.4 * multiplier);
+                effectiveAtkSpeed *= (1 + 0.6 * multiplier);
             }
             
             if (effectiveAtkSpeed > 0 && now - u.lastAttackTime >= (1000 / effectiveAtkSpeed)) {
@@ -1405,7 +1424,7 @@ function performAttack(attacker, target, now) {
     if (rageBuff) {
         const skillLvlMult = rageBuff.level || 1;
         const multiplier = 1 + (skillLvlMult - 1) * 0.25;
-        const splashMult = 1.2 * multiplier; // Tuned down from 1.5 to 1.2 in balance pass
+        const splashMult = 1.35 * multiplier; // 1.5 → 1.2 in balance pass, → 1.35 after sim showed Lu Bu underperforming at 5-cost
         const splashDmg = Math.round(damage * splashMult);
         activeUnits.forEach(other => {
             if (other.isDead || other.team === attacker.team || other === target) return;
@@ -1494,7 +1513,7 @@ function performAttack(attacker, target, now) {
     // Five Tigers stun-on-hit Fate check
     const hasFiveTigers = attacker.team === 'player' ? activeFates.includes('five_tigers') : (oppActiveFates && oppActiveFates.includes('five_tigers'));
     if (hasFiveTigers && ['guan_yu', 'zhang_fei', 'zhao_yun', 'ma_chao'].includes(attacker.templateId)) {
-        if (Math.random() < 0.25) {
+        if (Math.random() < 0.20) {
             applyStatusEffect(target, 'stun', 0, 1000);
             createFloatingNumber(target, '震懾', 'shield');
             addLog(`⚡ 五虎上將！${attacker.name} 的普通攻擊使 ${target.name} 震懾 1 秒！`, 'skill');
@@ -1660,15 +1679,15 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
 
         reductionMult = 1 - (defense / (defense + 250));
         
-        // Cao Cao Aura Check: Cao Cao takes 15% less damage
+        // Cao Cao Aura Check: Cao Cao takes 10% less damage
         if (unit.templateId === 'cao_cao') {
-            reductionMult *= 0.85;
+            reductionMult *= 0.90;
         }
-        // Cao Cao Aura Check: Cao Cao allies deal 12% more damage
+        // Cao Cao Aura Check: Cao Cao allies deal 8% more damage
         if (source) {
             const hasCaoCao = activeUnits.some(u => !u.isDead && u.team === source.team && u.templateId === 'cao_cao');
             if (hasCaoCao) {
-                netDmg = Math.round(netDmg * 1.12);
+                netDmg = Math.round(netDmg * 1.08);
             }
         }
 
@@ -1827,7 +1846,7 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
                 const partnerId = source.templateId === 'cao_cao' ? 'sima_yi' : 'cao_cao';
                 const partner = activeUnits.find(u => !u.isDead && u.team === source.team && u.templateId === partnerId);
                 if (partner) {
-                    const linkHeal = Math.round(netDmg * 0.20);
+                    const linkHeal = Math.round(netDmg * 0.12);
                     if (linkHeal > 0) healUnit(partner, linkHeal, source);
                 }
             }
@@ -1983,7 +2002,9 @@ function castSkill(unit) {
     // Zhuge Liang [神機妙算] silence counter check before enemy casts
     const opponentTeam = unit.team === 'player' ? 'enemy' : 'player';
     const zhuge = activeUnits.find(u => !u.isDead && u.team === opponentTeam && u.templateId === 'zhuge_liang');
-    if (zhuge && Math.random() < 0.35) {
+    const zhugeOffCooldown = zhuge && (!zhuge.lastInterruptTime || Date.now() - zhuge.lastInterruptTime >= 8000);
+    if (zhuge && zhugeOffCooldown && Math.random() < 0.35) {
+        zhuge.lastInterruptTime = Date.now();
         addLog(`🔮 ${opponentTeam === 'player' ? '己方' : '敵方'}諸葛亮觸發 [神機妙算]，成功打斷並計窮了 ${unit.name}！`, 'skill');
         createFloatingNumber(unit, '施法中斷', 'shield');
         applyStatusEffect(unit, 'silence', 0, 2000);
@@ -2360,7 +2381,9 @@ function castSkill(unit) {
             });
             const dir = unit.team === 'player' ? -1 : 1;
             const lineCols = [unit.x];
-            const lineRows = [unit.y + dir, unit.y + (dir * 2), unit.y + (dir * 3)];
+            // Arrow volley pierces the entire column in front of Yuan Shao
+            const lineRows = [];
+            for (let ry = unit.y + dir; ry >= 0 && ry <= 9; ry += dir) lineRows.push(ry);
             const ysDmg = Math.round(unit.stats.wuli * config.dmgMult * skillLvlMult);
             activeUnits.forEach(other => {
                 if (other.isDead || other.team === unit.team) return;
