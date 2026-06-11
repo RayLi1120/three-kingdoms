@@ -1,4 +1,4 @@
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=18';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=19';
 
 // Local references to game state and callbacks to avoid circular imports
 let logCallback = null;
@@ -375,7 +375,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
             stats.tongshuai = Math.round(stats.tongshuai * 1.20);
         }
         if (activeFates.includes('wei_intellects') && ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'].includes(u.templateId)) {
-            stats.zhili = Math.round(stats.zhili * 1.30);
+            stats.zhili = Math.round(stats.zhili * 1.20);
         }
         if (activeFates.includes('wu_commander') && ['zhou_yu', 'lu_xun', 'lu_su'].includes(u.templateId)) {
             stats.zhili = Math.round(stats.zhili * 1.20);
@@ -521,7 +521,7 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
                 stats.tongshuai = Math.round(stats.tongshuai * 1.20);
             }
             if (oppActiveFates.includes('wei_intellects') && ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'].includes(u.templateId)) {
-                stats.zhili = Math.round(stats.zhili * 1.30);
+                stats.zhili = Math.round(stats.zhili * 1.20);
             }
             if (oppActiveFates.includes('wu_commander') && ['zhou_yu', 'lu_xun', 'lu_su'].includes(u.templateId)) {
                 stats.zhili = Math.round(stats.zhili * 1.20);
@@ -767,14 +767,14 @@ export function initBattle(playerDeployedUnits, round, endCallback, logCallbackF
     activeUnits.forEach(unit => {
         if (unit.team === 'player') {
             if (activeFates.includes('wei_intellects') && ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'].includes(unit.templateId)) {
-                unit.energy = Math.min(100, unit.energy + 50);
+                unit.energy = Math.min(100, unit.energy + 40);
             }
             if (activeFates.includes('pillars_state') && ['sima_yi', 'zhou_yu', 'zhuge_liang'].includes(unit.templateId)) {
                 unit.energy = Math.min(100, unit.energy + 40);
             }
         } else if (unit.team === 'enemy') {
             if (oppActiveFates && oppActiveFates.includes('wei_intellects') && ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'].includes(unit.templateId)) {
-                unit.energy = Math.min(100, unit.energy + 50);
+                unit.energy = Math.min(100, unit.energy + 40);
             }
             if (oppActiveFates && oppActiveFates.includes('pillars_state') && ['sima_yi', 'zhou_yu', 'zhuge_liang'].includes(unit.templateId)) {
                 unit.energy = Math.min(100, unit.energy + 40);
@@ -1248,7 +1248,7 @@ function combatTick() {
             if (rageBuff) {
                 const skillLvlMult = rageBuff.level || 1;
                 const multiplier = 1 + (skillLvlMult - 1) * 0.25;
-                effectiveAtkSpeed *= (1 + 1.0 * multiplier);
+                effectiveAtkSpeed *= (1 + 0.4 * multiplier);
             }
             
             if (effectiveAtkSpeed > 0 && now - u.lastAttackTime >= (1000 / effectiveAtkSpeed)) {
@@ -1270,8 +1270,10 @@ function combatTick() {
             }
         }
         
-        // Skill execution at 100 energy
-        if (u.energy >= 100) {
+        // Skill execution at energy cap (per-hero energyMax from skillConfig, default 100)
+        const uTemplate = UNIT_TEMPLATES[u.templateId];
+        const energyCap = (uTemplate && uTemplate.skillConfig && uTemplate.skillConfig.energyMax) || 100;
+        if (u.energy >= energyCap) {
             castSkill(u);
         }
         // Equipped active skill fires on its own independent energy bar
@@ -1577,13 +1579,14 @@ function performAttack(attacker, target, now) {
         energyAttacker = Math.round(energyAttacker * 1.25); // Zhang Jiao passive energy speed
     }
 
-    if (activeFates.includes('wei_intellects')) {
-        if (['cao_cao', 'guo_jia', 'xun_yu'].includes(attacker.templateId)) {
-            energyAttacker = Math.round(energyAttacker * 1.3);
-        }
-        if (['cao_cao', 'guo_jia', 'xun_yu'].includes(target.templateId)) {
-            energyTarget = Math.round(energyTarget * 1.2);
-        }
+    const wiMembers = ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'];
+    const attackerHasWi = attacker.team === 'player' ? activeFates.includes('wei_intellects') : (oppActiveFates && oppActiveFates.includes('wei_intellects'));
+    const targetHasWi = target.team === 'player' ? activeFates.includes('wei_intellects') : (oppActiveFates && oppActiveFates.includes('wei_intellects'));
+    if (attackerHasWi && wiMembers.includes(attacker.templateId)) {
+        energyAttacker = Math.round(energyAttacker * 1.3);
+    }
+    if (targetHasWi && wiMembers.includes(target.templateId)) {
+        energyTarget = Math.round(energyTarget * 1.2);
     }
     
     if (!attacker.isBuilding) {
@@ -1970,9 +1973,22 @@ export function takeDamage(unit, amount, type = 'attack', source = null, isCrit 
     
     unit.hp = Math.max(unit.hp - netDmg, 0);
     unit.damageTaken = (unit.damageTaken || 0) + netDmg;
-    
+
     if (source) {
         source.damageDealt = (source.damageDealt || 0) + netDmg;
+
+        // wei_dynasty Fate: Cao Cao and Sima Yi each heal 20% of the damage the other deals
+        if (['cao_cao', 'sima_yi'].includes(source.templateId)) {
+            const hasWeiDynasty = source.team === 'player' ? activeFates.includes('wei_dynasty') : (oppActiveFates && oppActiveFates.includes('wei_dynasty'));
+            if (hasWeiDynasty) {
+                const partnerId = source.templateId === 'cao_cao' ? 'sima_yi' : 'cao_cao';
+                const partner = activeUnits.find(u => !u.isDead && u.team === source.team && u.templateId === partnerId);
+                if (partner) {
+                    const linkHeal = Math.round(netDmg * 0.20);
+                    if (linkHeal > 0) healUnit(partner, linkHeal, source);
+                }
+            }
+        }
     }
     
     if (isCrit) {
@@ -2172,40 +2188,14 @@ function castSkill(unit) {
     switch (config.type) {
         case 'sima_yi_aoe': {
             const dmg = Math.round(unit.stats.zhili * config.dmgMult * skillLvlMult);
-            let totalDmgDealt = 0;
+            // Let takeDamage apply mitigation once, then read actual damage dealt
+            // back from the damage meter accumulator for the lifesteal total
+            const dealtBefore = unit.damageDealt || 0;
             activeUnits.forEach(other => {
                 if (other.isDead || other.team === unit.team) return;
-                let defense = other.stats.tongshuai;
-                const ysBuff = other.statusEffects.find(e => e.type === 'yuan_shao_def_buff');
-                if (ysBuff) {
-                    const skillLvlMult = ysBuff.level || 1;
-                    const multiplier = 1 + (skillLvlMult - 1) * 0.25;
-                    defense = Math.round(defense * (1 + 0.40 * multiplier));
-                }
-                const sqBuff = other.statusEffects.find(e => e.type === 'sun_quan_buff');
-                if (sqBuff) {
-                    const skillLvlMult = sqBuff.level || 1;
-                    const multiplier = 1 + (skillLvlMult - 1) * 0.25;
-                    defense = Math.round(defense * (1 + 0.30 * multiplier));
-                }
-                
-                let reductionMult = 1 - (defense / (defense + 250));
-                const lbBuff = other.statusEffects.find(e => e.type === 'liu_bei_buff');
-                if (lbBuff) reductionMult *= (1 - (lbBuff.val / 100));
-                const gjBuff = other.statusEffects.find(e => e.type === 'guo_jia_buff');
-                if (gjBuff) {
-                    const skillLvlMult = gjBuff.level || 1;
-                    const multiplier = 1 + (skillLvlMult - 1) * 0.25;
-                    const reductionPct = Math.min(0.30 * multiplier, 0.90);
-                    reductionMult *= (1 - reductionPct);
-                }
-                
-                let netDmg = Math.round(dmg * reductionMult);
-                if (netDmg <= 0) netDmg = 1;
-                
-                totalDmgDealt += netDmg;
-                takeDamage(other, netDmg, 'skill', unit);
+                takeDamage(other, dmg, 'skill', unit);
             });
+            const totalDmgDealt = (unit.damageDealt || 0) - dealtBefore;
             if (totalDmgDealt > 0) {
                 const lifestealVal = Math.round(totalDmgDealt * config.lifestealMult);
                 healUnit(unit, lifestealVal, unit);
@@ -2269,7 +2259,7 @@ function castSkill(unit) {
                         
                         createFloatingNumber(luBu, '英雄增益', 'heal');
                         createFloatingNumber(highestDmgEnemy, '屬性吸取', 'dmg');
-                        addLog(`💖 英雄美人！呂布繼承了 ${highestDmgEnemy.name} 50% 的屬性。`, 'skill');
+                        addLog(`💖 英雄美人！呂布繼承了 ${highestDmgEnemy.name} ${Math.round(transferPct * 100)}% 的屬性。`, 'skill');
                     }
                 }
             }
@@ -3186,9 +3176,10 @@ function renderBattlefield() {
                 <div class="bar"><div class="bar-fill hp-fill" style="transform: scaleX(1)"></div></div>
                 <div class="bar" style="display:none;"><div class="bar-fill shield-fill" style="transform: scaleX(0)"></div></div>
                 ${!template.isBuilding ? `<div class="bar"><div class="bar-fill energy-fill" style="transform: scaleX(0)"></div></div>` : ''}
+                ${unit.equippedSkill && unit.equippedSkill.type === 'active' && !template.isBuilding ? `<div class="bar"><div class="bar-fill equipped-energy-fill" style="transform: scaleX(0)"></div></div>` : ''}
             </div>
         `;
-        
+
         elGrid.appendChild(unitEl);
     });
 }
@@ -3220,7 +3211,14 @@ function updateGridVisuals() {
         }
         
         const energyBar = dom.querySelector('.energy-fill');
-        if (energyBar) energyBar.style.transform = `scaleX(${unit.energy / 100})`;
+        if (energyBar) {
+            const tpl = UNIT_TEMPLATES[unit.templateId];
+            const cap = (tpl && tpl.skillConfig && tpl.skillConfig.energyMax) || 100;
+            energyBar.style.transform = `scaleX(${Math.min(unit.energy / cap, 1)})`;
+        }
+
+        const eqEnergyBar = dom.querySelector('.equipped-energy-fill');
+        if (eqEnergyBar) eqEnergyBar.style.transform = `scaleX(${(unit.equippedSkillEnergy || 0) / 100})`;
     });
     
     // Update live damage meter

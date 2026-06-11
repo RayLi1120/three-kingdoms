@@ -4,8 +4,8 @@
  * duplicate fusion, skill upgrades, and round progression.
  */
 
-import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=18';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=18';
+import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=19';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=19';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -1332,7 +1332,7 @@ function getSkillLevelDescription(template, level) {
     } else if (config.type === 'taunt_shield_sweep') {
         const dmgVal = Math.round(config.dmgMult * multiplier * 100);
         const shieldVal = Math.round(config.shieldMult * multiplier * 100);
-        desc = `對前方2x3範圍內的敵人造成 ${dmgVal}% 武力的物理傷害，嘲諷敵人並獲得相當於 ${shieldVal}% 統率的防禦護盾，持續 4 秒。`;
+        desc = `對前方2x3範圍內的敵人造成 ${dmgVal}% 武力的物理傷害，嘲諷敵人並獲得相當於 ${shieldVal}% 統率的防禦護盾，持續 ${config.durationSec} 秒。`;
     } else if (config.type === 'summon_buff') {
         const shieldVal = Math.round(config.shieldMult * multiplier * 100);
         const healVal = Math.round(config.healMult * multiplier * 100);

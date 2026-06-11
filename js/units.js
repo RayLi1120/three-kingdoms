@@ -849,7 +849,7 @@ export const FATE_TEMPLATES = {
         id: 'wei_intellects',
         name: '魏之智',
         requiredIds: ['guo_jia', 'xun_yu', 'jia_xu', 'cheng_yu'],
-        desc: '四人均獲得+20%智力與+15%奇謀（法術暴擊）幾率，戰鬥開始時直接獲得40點能量。'
+        desc: '四人均獲得+20%智力，戰鬥開始時直接獲得40點能量，且普通攻擊獲得的能量提升30%。'
     },
     wu_commander: {
         id: 'wu_commander',
@@ -867,7 +867,7 @@ export const FATE_TEMPLATES = {
         id: 'hero_beauty',
         name: '英雄美人',
         requiredIds: ['lu_bu', 'diao_chan'],
-        desc: '呂布獲得+25%武力。貂蟬獲得+25%最大生命值。貂蟬魅惑敵軍時，呂布會繼承目標50%的屬性。'
+        desc: '呂布獲得+25%武力。貂蟬獲得+25%最大生命值。貂蟬魅惑敵軍時，呂布會繼承目標25%的屬性（隨貂蟬戰法等級提升，最高50%）。'
     },
     five_tigers: {
         id: 'five_tigers',
@@ -899,8 +899,8 @@ export const FATE_TEMPLATES = {
 /**
  * Calculates scaled stats for a unit based on its Star Level.
  * ⭐ (1-Star): 100% stats (Base)
- * ⭐⭐ (2-Star): 150% stats
- * ⭐⭐⭐ (3-Star): 200% stats
+ * ⭐⭐ (2-Star): 180% stats
+ * ⭐⭐⭐ (3-Star): 320% stats
  */
 export function getStatsForStar(template, star = 1) {
     const scale = star === 1 ? 1.0 : star === 2 ? 1.8 : 3.2;
