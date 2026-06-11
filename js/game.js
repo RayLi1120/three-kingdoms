@@ -5,7 +5,7 @@
  */
 
 import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=19';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=20';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=21';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -2352,65 +2352,6 @@ function populateRosterGrid() {
     }
 }
 
-
-function getSkillTypeText(type) {
-    if (type === 'assault') return '突擊';
-    if (type === 'command' || type?.startsWith('command')) return '指揮';
-    if (type?.startsWith('formation')) return '陣法';
-    return '被動';
-}
-
-function getExtraSkillLevelDescription(template, level) {
-    const scale = 1 + (level - 1) * 0.25;
-    const config = template.extraSkillConfig;
-    if (!config) return template.extraSkillDesc || '-';
-    
-    if (template.id === 'zhuge_liang') {
-        const counterDmg = Math.round(150 * scale);
-        return `指揮：敵軍試圖發動主動戰法時，有 35% 幾率使其陷入計窮狀態（無法施法）2 秒，並對其造成 ${counterDmg}% 智力的謀略傷害。`;
-    }
-    if (template.id === 'zhang_fei') {
-        const dmgBuff = Math.round(20 * scale);
-        const defShred = Math.round(25 * scale);
-        return `被動：每次受到傷害時，使自身下一次攻擊或戰法造成的傷害提升 ${dmgBuff}%，並降低攻擊者 ${defShred}% 統率（防禦），持續 3 秒。`;
-    }
-    if (template.id === 'cao_cao') {
-        const dmgBuff = Math.round(12 * scale);
-        const dr = Math.round(15 * scale);
-        return `指揮：使我軍全體造成的傷害提升 ${dmgBuff}%，並使曹操自身受到的傷害降低 ${dr}%。`;
-    }
-    if (template.id === 'liu_bei') {
-        const heal = Math.round(80 * scale);
-        return `指揮：每 3 秒治療我軍兵力最低的單體（${heal}% 智力），並有 15% 幾率使隨機敵軍陷入繳械狀態（無法普攻）2 秒。`;
-    }
-    if (template.id === 'guan_yu') {
-        const wuli = Math.round(20 * scale);
-        return `被動：普通攻擊時，有 30% 幾率獲得 1 層抵禦（免疫下一次傷害），並提升自身 ${wuli}% 武力，持續 3 秒。`;
-    }
-    if (template.id === 'sun_quan') {
-        const dmg = Math.round(180 * scale);
-        return `突擊（35%）：普通攻擊後，對目標造成 ${dmg}% 智力的謀略傷害，並恢復自身等同於傷害量 100% 的生命值。`;
-    }
-    if (template.id === 'lu_xun') {
-        const dmg = Math.round(160 * scale);
-        const stunChance = Math.round(40 * scale);
-        return `突擊（30%）：普通攻擊後，對目標造成 ${dmg}% 智力的謀略傷害。若目標處於灼燒狀態，則有 ${stunChance}% 幾率使其震懾（無法行動）1.5 秒。`;
-    }
-    if (template.id === 'yuan_shu') {
-        const dmg = Math.round(200 * scale);
-        return `突擊（35%）：普通攻擊後，對目標造成 ${dmg}% 武力的物理傷害。`;
-    }
-    if (template.id === 'sima_yi') {
-        const dmg = Math.round(100 * scale);
-        return `被動：戰鬥開始後，每 4 秒對隨機敵軍 2 人造成謀略傷害（傷害率依次為 ${dmg}% / ${Math.round(150 * scale)}% / ${Math.round(200 * scale)}% / ${Math.round(250 * scale)}%，受智力影響）。`;
-    }
-    if (template.id === 'lu_bu') {
-        const dmg = Math.round(160 * scale);
-        const splash = Math.round(80 * scale);
-        return `突擊（30%）：普通攻擊後，對目標造成 ${dmg}% 武力的物理傷害，並對敵軍兵力最低的單體濺射 ${splash}% 的傷害。`;
-    }
-    return template.extraSkillDesc || '-';
-}
 
 function showRosterDetail(template) {
     if (!elRosterDetailOverlay) return;

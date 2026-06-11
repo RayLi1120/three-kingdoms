@@ -789,50 +789,6 @@ export function startBattle() {
 }
 
 // ==========================================
-// CUSTOM DYNAMIC TIMED ACTIVE SKILLS
-// ==========================================
-function castDuohunXiepo(caster) {
-    if (caster.isDead) return;
-    const isSilenced = caster.statusEffects.some(eff => eff.type === 'silence');
-    if (isSilenced) return;
-
-    const level = (caster.equippedSkill && caster.equippedSkill.level) || 1;
-    const stealPct = [0.15, 0.19, 0.23][level - 1] || 0.15;
-    
-    const enemies = activeUnits.filter(u => u.team !== caster.team && !u.isDead && !u.isBuilding);
-    if (enemies.length === 0) return;
-    const target = enemies[Math.floor(Math.random() * enemies.length)];
-    
-    const stealWuli = Math.round(target.stats.wuli * stealPct);
-    const stealZhili = Math.round(target.stats.zhili * stealPct);
-    const stealTongshuai = Math.round(target.stats.tongshuai * stealPct);
-    
-    target.stats.wuli = Math.max(1, target.stats.wuli - stealWuli);
-    target.stats.zhili = Math.max(1, target.stats.zhili - stealZhili);
-    target.stats.tongshuai = Math.max(1, target.stats.tongshuai - stealTongshuai);
-    
-    caster.stats.wuli += stealWuli;
-    caster.stats.zhili += stealZhili;
-    caster.stats.tongshuai += stealTongshuai;
-    
-    applyStatusEffect(caster, 'stat_steal_buff', 0, 4000, {
-        wuliSteal: stealWuli,
-        zhiliSteal: stealZhili,
-        tongshuaiSteal: stealTongshuai
-    });
-    
-    applyStatusEffect(target, 'stat_steal_debuff', 0, 4000, {
-        wuliSteal: stealWuli,
-        zhiliSteal: stealZhili,
-        tongshuaiSteal: stealTongshuai
-    });
-    
-    createFloatingNumber(caster, '奪魂', 'shield');
-    createFloatingNumber(target, '奪魂', 'dmg');
-    addLog(`✨ ${caster.name} 發動戰法 [奪魂挾魄]，偷取 ${target.name} ${Math.round(stealPct * 100)}% 屬性（武力+${stealWuli}，智力+${stealZhili}，統率+${stealTongshuai}），持續 4 秒！`, 'skill');
-}
-
-// ==========================================
 // MAIN COMBAT TICK LOOP
 // ==========================================
 function combatTick() {
@@ -1484,15 +1440,6 @@ function performAttack(attacker, target, now) {
         }
     }
     
-    // Trigger Assault Skills immediately after basic attack
-    const template = UNIT_TEMPLATES[attacker.templateId];
-    if (template && template.extraSkillConfig && template.extraSkillConfig.type === 'assault') {
-        const config = template.extraSkillConfig;
-        if (Math.random() < config.chance) {
-            triggerAssaultSkill(attacker, target, config);
-        }
-    }
-
     // Custom equipped Assault skill trigger
     if (attacker.equippedSkill && attacker.equippedSkill.type === 'assault' && !target.isDead) {
         const eqSkill = attacker.equippedSkill;
@@ -1618,107 +1565,6 @@ function performAttack(attacker, target, now) {
         // 2. Heal lowest HP ally for 50% damage dealt
         const healAmt = Math.round(damage * 0.5);
         healLowestAlly(attacker, healAmt);
-    }
-}
-
-function triggerAssaultSkill(attacker, target, config) {
-    const levelMult = 1 + (attacker.skillLevel - 1) * 0.25;
-    const name = UNIT_TEMPLATES[attacker.templateId].extraSkillName;
-    addLog(`⚡ 突擊戰法！${attacker.name} 發動戰法 [${name}]（${attacker.skillLevel} 級）！`, 'skill');
-
-    switch (attacker.templateId) {
-        case 'sun_quan': {
-            const dmg = Math.round(attacker.stats.zhili * config.dmgMult * levelMult);
-            createFloatingNumber(attacker, '兵無常勢', 'skill');
-            takeDamage(target, dmg, 'skill', attacker, false);
-            healUnit(attacker, dmg, attacker);
-            break;
-        }
-        case 'lu_xun': {
-            const dmg = Math.round(attacker.stats.zhili * config.dmgMult * levelMult);
-            createFloatingNumber(attacker, '克敵制勝', 'skill');
-            takeDamage(target, dmg, 'skill', attacker, false);
-            if (target.statusEffects.some(e => e.type === 'burn') && Math.random() < config.stunChance) {
-                applyStatusEffect(target, 'stun', 0, config.stunDurationSec * 1000);
-                createFloatingNumber(target, '震懾', 'shield');
-            }
-            break;
-        }
-        case 'yuan_shu': {
-            const dmg = Math.round(attacker.stats.wuli * config.dmgMult * levelMult);
-            createFloatingNumber(attacker, '手起刀落', 'skill');
-            takeDamage(target, dmg, 'skill', attacker, false);
-            break;
-        }
-        case 'lu_bu': {
-            const dmg = Math.round(attacker.stats.wuli * config.dmgMult * levelMult);
-            createFloatingNumber(attacker, '百騎劫營', 'skill');
-            takeDamage(target, dmg, 'skill', attacker, false);
-            
-            // Splash to lowest HP enemy
-            let lowestEnemy = null;
-            let minHP = Infinity;
-            activeUnits.forEach(other => {
-                if (other.isDead || other.team === attacker.team) return;
-                if (other.hp < minHP) {
-                    minHP = other.hp;
-                    lowestEnemy = other;
-                }
-            });
-            if (lowestEnemy) {
-                const splashDmg = Math.round(dmg * config.splashPct);
-                takeDamage(lowestEnemy, splashDmg, 'skill', attacker, false);
-                createFloatingNumber(lowestEnemy, '濺射', 'dmg');
-            }
-            break;
-        }
-        case 'ma_chao': {
-            const dmg = Math.round(attacker.stats.wuli * config.dmgMult * levelMult);
-            createFloatingNumber(attacker, '一騎當千', 'skill');
-            activeUnits.forEach(other => {
-                if (other.isDead || other.team === attacker.team) return;
-                if (getDistance(target, other) <= config.radius || other === target) {
-                    takeDamage(other, dmg, 'skill', attacker, false);
-                    createFloatingNumber(other, '一騎當千', 'dmg');
-                }
-            });
-            break;
-        }
-        case 'sun_shangxiang': {
-            createFloatingNumber(attacker, '強攻', 'skill');
-            applyStatusEffect(attacker, 'double_attack', 0, config.durationSec * 1000);
-            break;
-        }
-        case 'tai_shici': {
-            createFloatingNumber(attacker, '折衝禦侮', 'skill');
-            
-            const zhiliShred = Math.round(target.stats.zhili * config.debuffPct);
-            const tongshuaiShred = Math.round(target.stats.tongshuai * config.debuffPct);
-            target.stats.zhili = Math.max(1, target.stats.zhili - zhiliShred);
-            target.stats.tongshuai = Math.max(1, target.stats.tongshuai - tongshuaiShred);
-            
-            applyStatusEffect(target, 'zhechong_debuff', 0, 3000, {
-                zhiliShred,
-                tongshuaiShred
-            });
-            createFloatingNumber(target, '折衝破防', 'dmg');
-            
-            let lowestDefAlly = null;
-            let minDef = Infinity;
-            activeUnits.forEach(other => {
-                if (other.isDead || other.team !== attacker.team) return;
-                if (other.stats.tongshuai < minDef) {
-                    minDef = other.stats.tongshuai;
-                    lowestDefAlly = other;
-                }
-            });
-            if (lowestDefAlly) {
-                applyStatusEffect(lowestDefAlly, 'resist', 1, config.shieldDurationSec * 1000);
-                createFloatingNumber(lowestDefAlly, '折衝禦侮', 'shield');
-                addLog(`🛡️ 太史慈的 [折衝禦侮] 為 ${lowestDefAlly.name} 施加了格擋防護！`, 'skill');
-            }
-            break;
-        }
     }
 }
 
@@ -2461,39 +2307,6 @@ function castSkill(unit) {
                 applyStatusEffect(other, 'burn', zyBurn, config.durationSec * 1000);
                 createFloatingNumber(other, '灼燒', 'dmg');
             });
-
-            // Zhou Yu secondary passive [奪魂挾魄]
-            if (Math.random() < 0.50) {
-                let targetEnemy = null;
-                let maxHP = -1;
-                activeUnits.forEach(other => {
-                    if (other.isDead || other.team === unit.team) return;
-                    if (other.hp > maxHP) {
-                        maxHP = other.hp;
-                        targetEnemy = other;
-                    }
-                });
-                if (targetEnemy) {
-                    const wuliSteal = Math.round(targetEnemy.stats.wuli * 0.15);
-                    const zhiliSteal = Math.round(targetEnemy.stats.zhili * 0.15);
-                    const tongshuaiSteal = Math.round(targetEnemy.stats.tongshuai * 0.15);
-                    
-                    unit.stats.wuli += wuliSteal;
-                    unit.stats.zhili += zhiliSteal;
-                    unit.stats.tongshuai += tongshuaiSteal;
-                    
-                    targetEnemy.stats.wuli = Math.max(1, targetEnemy.stats.wuli - wuliSteal);
-                    targetEnemy.stats.zhili = Math.max(1, targetEnemy.stats.zhili - zhiliSteal);
-                    targetEnemy.stats.tongshuai = Math.max(1, targetEnemy.stats.tongshuai - tongshuaiSteal);
-                    
-                    applyStatusEffect(unit, 'stat_steal_buff', 0, 4000, { wuliSteal, zhiliSteal, tongshuaiSteal });
-                    applyStatusEffect(targetEnemy, 'stat_steal_debuff', 0, 4000, { wuliSteal, zhiliSteal, tongshuaiSteal });
-                    
-                    createFloatingNumber(unit, '奪魂', 'heal');
-                    createFloatingNumber(targetEnemy, '屬性吸取', 'dmg');
-                    addLog(`🔥 周瑜觸發 [奪魂挾魄] 奪取了 ${targetEnemy.name} 15% 的屬性！`, 'skill');
-                }
-            }
             break;
 
         case 'lu_xun_explode':
