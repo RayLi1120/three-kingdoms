@@ -5,7 +5,7 @@
  */
 
 import { UNIT_TEMPLATES, FATE_TEMPLATES, getStatsForStar, SKILL_TEMPLATES } from './units.js?v=19';
-import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=19';
+import { initBattle, startBattle, setCombatSpeed, setCombatAudio, playSound, updateDamageMeter } from './battle.js?v=20';
 
 // Base URL for the matchmaking server backend.
 // GitHub Pages hosts static files and cannot run the Python backend.
@@ -576,15 +576,16 @@ function renderShop() {
             : `background-color: ${template.color}22; border-color: ${template.color}66; display:flex; align-items:center; justify-content:center;`;
         
         slot.innerHTML = `
-            <div class="card-header">
-                <span class="card-title">${template.name} <span style="font-size:0.7rem; font-weight:normal; opacity:0.85; margin-left:4px; color:#60a5fa;">(${template.cost}統)</span></span>
-                <span class="card-faction" style="font-size:0.6rem; font-weight:800; color:${template.color}; text-transform:uppercase;">${factionChinese[template.faction] || template.faction}</span>
-                <span class="card-cost">🪙 ${template.cost}</span>
-            </div>
             <div class="card-portrait-thumb" style="${portraitStyle}">
                 ${template.portrait ? '' : `<span style="font-family: var(--font-header); font-size:1.2rem; color:${template.color}; text-shadow: 0 0 6px ${template.color}bb">${template.avatarText}</span>`}
             </div>
-            <div class="card-desc">${template.skillDesc}</div>
+            <div class="card-body">
+                <div class="card-header">
+                    <span class="card-title">${template.name} <span style="font-size:0.65rem; font-weight:normal; opacity:0.85; color:#60a5fa;">(${template.cost}統)</span> <span style="font-size:0.6rem; font-weight:800; color:${template.color};">${factionChinese[template.faction] || template.faction}</span></span>
+                    <span class="card-cost">🪙 ${template.cost}</span>
+                </div>
+                <div class="card-desc">${template.skillDesc}</div>
+            </div>
         `;
         
         slot.addEventListener('click', () => buyUnit(index));

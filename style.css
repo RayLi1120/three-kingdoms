@@ -31,8 +31,9 @@
     --font-header: 'Cinzel', Georgia, serif;
     --font-sans: 'Outfit', -apple-system, sans-serif;
     
-    /* Grid Constants */
-    --cell-size: 44px;
+    /* Grid Constants — cells shrink on short screens so board + shop fit
+       without scrolling; 400px ≈ header + footer + paddings overhead */
+    --cell-size: clamp(26px, calc((100vh - 400px) / 10), 44px);
 }
 
 /* Global Reset */
@@ -785,8 +786,8 @@ body {
 
 /* Token Representation */
 .unit-token {
-    width: 40px;
-    height: 40px;
+    width: calc(var(--cell-size) - 4px);
+    height: calc(var(--cell-size) - 4px);
     border-radius: 50%;
     background-color: #1e293b;
     border: 2px solid var(--text-muted);
@@ -858,7 +859,7 @@ body {
 
 /* Unit Status Indicators */
 .unit-bars {
-    width: 44px;
+    width: var(--cell-size);
     display: flex;
     flex-direction: column;
     gap: 1.5px;
@@ -922,7 +923,8 @@ body {
     padding: 12px;
     display: flex;
     gap: 16px;
-    height: 160px;
+    height: auto;
+    flex-shrink: 0;
 }
 
 /* Bench strip (above shop tabs, inside shop-container) */
@@ -944,7 +946,7 @@ body {
 .bench-slots {
     display: flex;
     gap: 6px;
-    height: 72px;
+    height: 58px;
 }
 
 .bench-slot {
@@ -970,8 +972,8 @@ body {
 }
 
 .bench-slot .bench-token {
-    width: 34px;
-    height: 30px;
+    width: 30px;
+    height: 26px;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -1102,29 +1104,41 @@ body {
 
 .shop-slots-wrapper {
     position: relative;
-    height: 100%;
+    height: auto;
 }
 
 .shop-slots {
     display: flex;
     gap: 8px;
-    height: 100%;
+    height: auto;
 }
 
-/* Individual Shop Card */
+/* Individual Shop Card — compact horizontal layout (portrait left, text right) */
 .shop-card {
     flex: 1;
+    min-width: 0;
+    height: 86px;
     background: rgba(30, 41, 59, 0.4);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 8px;
     padding: 8px;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     cursor: pointer;
     position: relative;
     overflow: hidden;
     transition: transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.shop-card .card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
 }
 
 .shop-card:hover {
@@ -1158,9 +1172,10 @@ body {
 }
 
 .card-portrait-thumb {
-    width: 72px;
-    height: 48px;
-    margin: 0 auto;
+    width: 56px;
+    height: 64px;
+    margin: 0;
+    flex-shrink: 0;
     border-radius: 4px;
     background-size: cover;
     background-position: center;
@@ -2900,11 +2915,11 @@ body {
     background: rgba(255, 255, 255, 0.02);
     border: 1.5px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
-    padding: 12px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 120px;
+    height: 96px;
     transition: all 0.25s ease;
     position: relative;
     box-sizing: border-box;

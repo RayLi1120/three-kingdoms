@@ -43,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
     <div class="game-container">
@@ -219,13 +219,9 @@
                     <button class="shop-tab" id="shop-tab-skills">戰法研習</button>
                 </div>
                 
-                <!-- Tab Content 1: Heroes -->
+                <!-- Tab Content 1: Heroes (tab itself labels this section; title row removed to save height) -->
                 <div id="shop-heroes-content">
-                    <div class="shop-title-bar" style="margin-top: 4px;">
-                        <span class="shop-label">招募武將</span>
-                        <span class="shop-tip">點擊卡牌招募武將（需消耗金幣），並將其放置在己方下方的4行中</span>
-                    </div>
-                    <div class="shop-slots-wrapper" style="position: relative;">
+                    <div class="shop-slots-wrapper" style="position: relative; margin-top: 4px;">
                         <div class="shop-slots" id="shop-slots">
                             <!-- Shop slots will be rendered dynamically -->
                         </div>
@@ -444,6 +440,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/game.js?v=24"></script>
+    <script type="module" src="js/game.js?v=25"></script>
 </body>
 </html>

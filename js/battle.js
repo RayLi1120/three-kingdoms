@@ -175,9 +175,6 @@ export function playSound(type) {
     }
 }
 
-// Grid cell dimensions for floating numbers
-const CELL_SIZE = 56;
-
 // ==========================================
 // WAVE GENERATOR
 // ==========================================
@@ -3313,13 +3310,10 @@ function createFloatingNumber(unit, text, type) {
     floatEl.className = `floating-number ${type}`;
     floatEl.textContent = text;
     
-    // Get target unit cell pixels offset to center float
+    // Position relative to the grid so it tracks the responsive cell size
     // col -> x, row -> y
-    const posX = unit.x * CELL_SIZE + (CELL_SIZE / 4);
-    const posY = unit.y * CELL_SIZE - 10;
-    
-    floatEl.style.left = `${posX}px`;
-    floatEl.style.top = `${posY}px`;
+    floatEl.style.left = `calc(${unit.x * 100 / 8}% + 10px)`;
+    floatEl.style.top = `calc(${unit.y * 100 / 10}% - 10px)`;
     
     elGrid.appendChild(floatEl);
     
