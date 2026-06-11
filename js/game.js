@@ -1126,7 +1126,7 @@ function showDetailCard(unit, allowUpgrade = true) {
         elPortrait.style.borderColor = template.color;
         elPortrait.innerHTML = `
             <div style="display:flex; height:100%; width:100%; align-items:center; justify-content:center;">
-                <span style="font-family: var(--font-header); font-size:4rem; color:${template.color}; text-shadow:0 0 15px ${template.color}bb">${template.avatarText}</span>
+                <span style="font-family: var(--font-header); font-size:2.6rem; color:${template.color}; text-shadow:0 0 15px ${template.color}bb">${template.avatarText}</span>
             </div>
         `;
     }
@@ -1138,6 +1138,8 @@ function showDetailCard(unit, allowUpgrade = true) {
     const currentHp = typeof unit.hp === 'number' ? unit.hp : stats.hpMax;
     document.getElementById('detail-hp').textContent = `${currentHp} / ${stats.hpMax}`;
     document.getElementById('detail-dmg').textContent = stats.wuli > 0 ? stats.wuli : '0';
+    document.getElementById('detail-zhili').textContent = stats.zhili > 0 ? stats.zhili : '0';
+    document.getElementById('detail-tongshuai').textContent = stats.tongshuai > 0 ? stats.tongshuai : '0';
     document.getElementById('detail-atk-speed').textContent = template.atkSpeed > 0 ? `${template.atkSpeed}/s` : '0/s';
     document.getElementById('detail-range').textContent = template.range > 0 ? `${template.range} 格` : '靜態設施';
     

@@ -43,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
     <div class="game-container">
@@ -114,28 +114,40 @@
                         <p>選擇一名武將或防禦建築以查看其屬性與戰法詳情。</p>
                     </div>
                     <div class="detail-content hidden" id="detail-content">
-                        <div class="unit-portrait-large" id="detail-portrait"></div>
-                        <div class="unit-header">
-                            <h2 class="unit-name" id="detail-name">諸葛亮</h2>
-                            <span class="unit-role" id="detail-role">後排法師 / 治療</span>
-                        </div>
-                        <div class="unit-cost-tag" id="detail-cost">消耗：4 統禦</div>
-                        <div class="unit-stats-grid">
-                            <div class="detail-stat">
-                                <span class="stat-label">兵力 (HP)</span>
-                                <span class="stat-val" id="detail-hp">600 / 600</span>
-                            </div>
-                            <div class="detail-stat">
-                                <span class="stat-label">武力 (物攻)</span>
-                                <span class="stat-val" id="detail-dmg">45</span>
-                            </div>
-                            <div class="detail-stat">
-                                <span class="stat-label">攻速</span>
-                                <span class="stat-val" id="detail-atk-speed">1.0/s</span>
-                            </div>
-                            <div class="detail-stat">
-                                <span class="stat-label">射程</span>
-                                <span class="stat-val" id="detail-range">4 格</span>
+                        <div class="detail-top">
+                            <div class="unit-portrait-large" id="detail-portrait"></div>
+                            <div class="detail-top-info">
+                                <div class="unit-header">
+                                    <h2 class="unit-name" id="detail-name">諸葛亮</h2>
+                                </div>
+                                <span class="unit-role" id="detail-role">後排法師 / 治療</span>
+                                <div class="unit-cost-tag" id="detail-cost">消耗：4 統禦</div>
+                                <div class="unit-stats-grid">
+                                    <div class="detail-stat">
+                                        <span class="stat-label">兵力</span>
+                                        <span class="stat-val" id="detail-hp">600 / 600</span>
+                                    </div>
+                                    <div class="detail-stat">
+                                        <span class="stat-label">武力</span>
+                                        <span class="stat-val" id="detail-dmg">45</span>
+                                    </div>
+                                    <div class="detail-stat">
+                                        <span class="stat-label">智力</span>
+                                        <span class="stat-val" id="detail-zhili">120</span>
+                                    </div>
+                                    <div class="detail-stat">
+                                        <span class="stat-label">統率</span>
+                                        <span class="stat-val" id="detail-tongshuai">65</span>
+                                    </div>
+                                    <div class="detail-stat">
+                                        <span class="stat-label">攻速</span>
+                                        <span class="stat-val" id="detail-atk-speed">1.0/s</span>
+                                    </div>
+                                    <div class="detail-stat">
+                                        <span class="stat-label">射程</span>
+                                        <span class="stat-val" id="detail-range">4 格</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="unit-skill-box">
@@ -440,6 +452,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/game.js?v=25"></script>
+    <script type="module" src="js/game.js?v=26"></script>
 </body>
 </html>

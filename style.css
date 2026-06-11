@@ -362,12 +362,15 @@ body {
 
 /* Detail Card Panel */
 .detail-card {
-    flex: 1.3;
-    padding: 20px;
+    flex: 1.6;
+    padding: 11px 16px;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow-y: auto;
+    /* overflow:auto zeroes flex min-height; keep enough to show the
+       portrait + full stats block — synergy/log panels scroll instead */
+    min-height: 212px;
 }
 
 .detail-placeholder {
@@ -395,14 +398,31 @@ body {
     display: none;
 }
 
+/* Top block: portrait on the left, name/role/cost/stats on the right */
+.detail-top {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: stretch;
+}
+
+.detail-top-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
 .unit-portrait-large {
-    width: 100%;
-    height: 130px;
+    width: 112px;
+    flex-shrink: 0;
+    align-self: stretch;
+    min-height: 138px;
     border-radius: 8px;
     background-size: cover;
-    background-position: center;
+    background-position: top center;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 12px;
     position: relative;
 }
 
@@ -418,9 +438,9 @@ body {
 
 .unit-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-end;
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 
 .unit-name {
@@ -438,27 +458,33 @@ body {
 }
 
 .unit-cost-tag {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: var(--gold);
     font-weight: 700;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
 }
 
 .unit-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 4px 6px;
+    margin-bottom: 0;
+}
+
+/* HP value is the widest — give it the full row so it never wraps */
+.unit-stats-grid .detail-stat:first-child {
+    grid-column: span 2;
 }
 
 .detail-stat {
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.04);
     border-radius: 6px;
-    padding: 6px 12px;
+    padding: 3px 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-width: 0;
 }
 
 .detail-stat .stat-label {
@@ -2312,8 +2338,8 @@ body {
     }
     
     .unit-portrait-large {
-        width: 100px;
-        height: 100px;
+        width: 86px;
+        min-height: 110px;
     }
     
     .unit-header h2 {
