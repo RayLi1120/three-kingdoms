@@ -931,6 +931,7 @@ body {
     flex-direction: column;
     gap: 4px;
     margin-bottom: 6px;
+    flex-shrink: 0;
 }
 
 .bench-label {
@@ -2849,6 +2850,9 @@ body {
     border-radius: 8px 8px 0 0;
     overflow: hidden;
     margin-bottom: 8px;
+    /* overflow:hidden zeroes the flex min-height, letting the fixed-height
+       footer squash this row to 1px — keep it at natural height */
+    flex-shrink: 0;
 }
 
 .shop-tab {
