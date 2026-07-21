@@ -1,3 +1,4 @@
 # never commit the plaintext dashboard (real financial data)
 finance-dashboard/
 .DS_Store
+privatefinance/
